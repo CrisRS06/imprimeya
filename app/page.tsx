@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   ImageIcon,
   FileTextIcon,
@@ -53,18 +54,27 @@ export default function HomePage() {
 
   return (
     <div className="min-h-full flex flex-col bg-white">
-      {/* Header */}
-      <header className="px-6 pt-12 pb-8">
+      {/* Header con Logo Simple */}
+      <header className="px-6 pt-8 pb-6">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center"
+          className="flex flex-col items-center"
         >
-          <h1 className="text-4xl font-bold tracking-tight text-black">
-            Imprime<span className="text-primary">YA</span>
-          </h1>
-          <p className="text-gray-400 mt-1 text-sm">por Simple!</p>
+          <Image
+            src="/logo-simple.png"
+            alt="Simple! - Vive mejor, al mejor precio"
+            width={200}
+            height={80}
+            priority
+            className="h-16 w-auto"
+          />
+          <div className="mt-4 bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-1.5 rounded-full">
+            <span className="text-white font-bold text-sm tracking-wide">
+              ImprimeYA
+            </span>
+          </div>
         </motion.div>
       </header>
 
@@ -178,10 +188,14 @@ export default function HomePage() {
       </main>
 
       {/* Footer */}
-      <footer className="px-6 py-6 text-center">
-        <p className="text-xs text-gray-300">
-          {new Date().getFullYear()} Simple! - Vive mejor, al mejor precio
-        </p>
+      <footer className="px-6 py-4 text-center">
+        <Image
+          src="/logo-simple.png"
+          alt="Simple!"
+          width={100}
+          height={40}
+          className="h-8 w-auto mx-auto opacity-40"
+        />
       </footer>
     </div>
   );

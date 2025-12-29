@@ -36,13 +36,14 @@ const productOptions: ProductOption[] = [
     icon: FileTextIcon,
     href: "/documento",
   },
-  {
-    id: "poster",
-    title: "Poster",
-    description: "Una foto en varias hojas",
-    icon: LayoutGridIcon,
-    href: "/nuevo?type=poster",
-  },
+  // Poster oculto por ahora
+  // {
+  //   id: "poster",
+  //   title: "Poster",
+  //   description: "Una foto en varias hojas",
+  //   icon: LayoutGridIcon,
+  //   href: "/nuevo?type=poster",
+  // },
 ];
 
 export default function HomePage() {

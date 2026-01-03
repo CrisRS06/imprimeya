@@ -302,8 +302,16 @@ export default function PrintPage({
       {/* Info del pedido y acciones - NO se imprime */}
       <div className="no-print bg-gray-50 border-b pt-20 pb-4 px-4">
         <div className="max-w-4xl mx-auto">
-          {/* Detalles del pedido */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+          {/* Tipo de papel - PROMINENTE */}
+          <div className="bg-amber-100 border-2 border-amber-400 rounded-xl px-6 py-4 mb-4">
+            <p className="text-amber-700 text-sm font-medium">USAR PAPEL</p>
+            <p className="text-3xl font-bold text-amber-900 uppercase tracking-wide">
+              {data.order.paperDisplayName}
+            </p>
+          </div>
+
+          {/* Otros detalles */}
+          <div className="grid grid-cols-3 gap-4 text-sm mb-4">
             <div>
               <span className="text-gray-500">Tipo:</span>
               <span className="ml-2 font-medium">{data.order.productType}</span>
@@ -313,13 +321,9 @@ export default function PrintPage({
               <span className="ml-2 font-medium">{data.order.sizeName}</span>
             </div>
             <div>
-              <span className="text-gray-500">Papel:</span>
-              <span className="ml-2 font-medium">{data.order.paperDisplayName}</span>
-            </div>
-            <div>
-              <span className="text-gray-500">Fotos:</span>
+              <span className="text-gray-500">Hojas:</span>
               <span className="ml-2 font-medium">
-                {totalPhotos} en {sheetsNeeded} {sheetsNeeded === 1 ? "hoja" : "hojas"}
+                {sheetsNeeded} {sheetsNeeded === 1 ? "hoja" : "hojas"} ({totalPhotos} fotos)
               </span>
             </div>
           </div>

@@ -249,6 +249,86 @@ export function LayoutSelector({
         </div>
       </div>
 
+      {/* Toggle Llenar/Ajustar - MOVIDO ARRIBA */}
+      <div>
+        <h3 className="text-sm font-medium text-gray-700 mb-3">
+          Como ajustar la foto?
+        </h3>
+        <div className="grid grid-cols-2 gap-3">
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setFillMode("fill")}
+            className={cn(
+              "relative flex items-center gap-3 p-4 rounded-xl border-2 transition-all duration-200",
+              fillMode === "fill"
+                ? "border-primary bg-primary/10 shadow-lg shadow-primary/20"
+                : "border-gray-200 bg-white hover:border-gray-300"
+            )}
+          >
+            {fillMode === "fill" && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow-md"
+              >
+                <CheckIcon className="w-4 h-4 text-black" />
+              </motion.div>
+            )}
+            <ExpandIcon className={cn(
+              "w-6 h-6",
+              fillMode === "fill" ? "text-primary" : "text-gray-400"
+            )} />
+            <div className="text-left">
+              <div className={cn(
+                "font-semibold",
+                fillMode === "fill" ? "text-black" : "text-gray-700"
+              )}>
+                Llenar
+              </div>
+              <div className="text-xs text-gray-500">
+                Recorta para llenar
+              </div>
+            </div>
+          </motion.button>
+
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setFillMode("fit")}
+            className={cn(
+              "relative flex items-center gap-3 p-4 rounded-xl border-2 transition-all duration-200",
+              fillMode === "fit"
+                ? "border-primary bg-primary/10 shadow-lg shadow-primary/20"
+                : "border-gray-200 bg-white hover:border-gray-300"
+            )}
+          >
+            {fillMode === "fit" && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow-md"
+              >
+                <CheckIcon className="w-4 h-4 text-black" />
+              </motion.div>
+            )}
+            <ShrinkIcon className={cn(
+              "w-6 h-6",
+              fillMode === "fit" ? "text-primary" : "text-gray-400"
+            )} />
+            <div className="text-left">
+              <div className={cn(
+                "font-semibold",
+                fillMode === "fit" ? "text-black" : "text-gray-700"
+              )}>
+                Ajustar
+              </div>
+              <div className="text-xs text-gray-500">
+                Sin recortar nada
+              </div>
+            </div>
+          </motion.button>
+        </div>
+      </div>
+
       {/* Selector de cantidad */}
       <div>
         <h3 className="text-sm font-medium text-gray-700 mb-3">
@@ -382,87 +462,7 @@ export function LayoutSelector({
         )}
       </div>
 
-      {/* Toggle Llenar/Ajustar */}
-      <div>
-        <h3 className="text-sm font-medium text-gray-700 mb-3">
-          Como ajustar la foto?
-        </h3>
-        <div className="grid grid-cols-2 gap-3">
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setFillMode("fill")}
-            className={cn(
-              "relative flex items-center gap-3 p-4 rounded-xl border-2 transition-all duration-200",
-              fillMode === "fill"
-                ? "border-primary bg-primary/10 shadow-lg shadow-primary/20"
-                : "border-gray-200 bg-white hover:border-gray-300"
-            )}
-          >
-            {fillMode === "fill" && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow-md"
-              >
-                <CheckIcon className="w-4 h-4 text-black" />
-              </motion.div>
-            )}
-            <ExpandIcon className={cn(
-              "w-6 h-6",
-              fillMode === "fill" ? "text-primary" : "text-gray-400"
-            )} />
-            <div className="text-left">
-              <div className={cn(
-                "font-semibold",
-                fillMode === "fill" ? "text-black" : "text-gray-700"
-              )}>
-                Llenar
-              </div>
-              <div className="text-xs text-gray-500">
-                Recorta para llenar
-              </div>
-            </div>
-          </motion.button>
-
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setFillMode("fit")}
-            className={cn(
-              "relative flex items-center gap-3 p-4 rounded-xl border-2 transition-all duration-200",
-              fillMode === "fit"
-                ? "border-primary bg-primary/10 shadow-lg shadow-primary/20"
-                : "border-gray-200 bg-white hover:border-gray-300"
-            )}
-          >
-            {fillMode === "fit" && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow-md"
-              >
-                <CheckIcon className="w-4 h-4 text-black" />
-              </motion.div>
-            )}
-            <ShrinkIcon className={cn(
-              "w-6 h-6",
-              fillMode === "fit" ? "text-primary" : "text-gray-400"
-            )} />
-            <div className="text-left">
-              <div className={cn(
-                "font-semibold",
-                fillMode === "fit" ? "text-black" : "text-gray-700"
-              )}>
-                Ajustar
-              </div>
-              <div className="text-xs text-gray-500">
-                Sin recortar nada
-              </div>
-            </div>
-          </motion.button>
-        </div>
-      </div>
-
-      {/* Resumen de hojas necesarias */}
+      {/* Resumen de hojas y precio */}
       {sheetsInfo && bestLayoutForSize && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -474,17 +474,32 @@ export function LayoutSelector({
               {sheetsInfo.sheetsNeeded} {sheetsInfo.sheetsNeeded === 1 ? "hoja" : "hojas"}
             </div>
             <div className="text-sm text-primary font-medium">
-              {sheetsInfo.photosPerSheet} fotos por hoja
+              {totalQuantity} {totalQuantity === 1 ? "copia" : "copias"} de tu foto
             </div>
-            <div className="mt-3 pt-3 border-t border-primary/20">
-              <div className="text-sm text-gray-600">
-                {totalQuantity} {totalQuantity === 1 ? "foto" : "fotos"} en total
-                {sheetsInfo.emptySpots > 0 && (
-                  <span className="text-gray-400">
-                    {" "}({sheetsInfo.emptySpots} {sheetsInfo.emptySpots === 1 ? "espacio vacio" : "espacios vacios"})
-                  </span>
-                )}
-              </div>
+            <div className="text-xs text-gray-500 mt-1">
+              {fillMode === "fill" ? "Llenar (recorta)" : "Ajustar (sin recortar)"}
+            </div>
+          </div>
+
+          {/* Desglose de precio */}
+          <div className="mt-4 pt-4 border-t border-primary/20 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Impresion color</span>
+              <span className="text-gray-700">
+                ₡100 × {sheetsInfo.sheetsNeeded} = ₡{(100 * sheetsInfo.sheetsNeeded).toLocaleString()}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Papel fotografico</span>
+              <span className="text-gray-700">
+                ₡400 × {sheetsInfo.sheetsNeeded} = ₡{(400 * sheetsInfo.sheetsNeeded).toLocaleString()}
+              </span>
+            </div>
+            <div className="flex justify-between text-base font-bold pt-2 border-t border-primary/20">
+              <span className="text-black">Total estimado</span>
+              <span className="text-primary">
+                ₡{(500 * sheetsInfo.sheetsNeeded).toLocaleString()}
+              </span>
             </div>
           </div>
         </motion.div>

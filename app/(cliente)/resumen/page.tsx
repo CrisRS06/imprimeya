@@ -158,20 +158,28 @@ function ResumenPageContent() {
 
       const uploadedImages = photos.map((p) => p.storagePath!);
 
+      // Determinar sizeName segun tipo de producto
+      // Para fotos: usar el tamaño del layout seleccionado
+      // Para documentos: usar "Carta" (tamaño estándar)
+      const sizeName = productType === "document"
+        ? "Carta"
+        : selectedLayout?.photo_size || "4x6";
+
       // Call API
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productType,
-          sizeName: selectedLayout?.photo_size,  // API requiere sizeName, no layoutId
-          paperType: selectedPaper,
+          sizeName,
+          paperType: selectedPaper || "bond_normal",  // Default para documentos
           quantity: sheetsCount,  // API usa quantity para hojas a imprimir
           originalImages: uploadedImages,  // Ahora son paths de Supabase Storage
           isColor,  // Para documentos: true = color (₡100), false = B&N (₡50)
           designData: {
             ...state.fabricData,
             layoutId: selectedLayout?.id,
+            sizeName,
             totalPhotos: totalQuantity,
             photosWithQuantities: photos,
             fillMode, // fill=cover, fit=contain

@@ -11,13 +11,13 @@ import {
   CopyIcon,
   HomeIcon,
   ArrowLeftIcon,
-  PrinterIcon,
   CreditCardIcon,
   PackageIcon,
-  ClockIcon,
   CameraIcon,
   FileTextIcon,
   MaximizeIcon,
+  UserIcon,
+  ClipboardCheckIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -291,10 +291,10 @@ function ResumenPageContent() {
               </h3>
               <div className="space-y-4">
                 {[
-                  { icon: ClockIcon, text: "Espera unos minutos" },
-                  { icon: PrinterIcon, text: "Procesamos tu impresion" },
+                  { icon: UserIcon, text: "Lleva este codigo a la cajera" },
+                  { icon: ClipboardCheckIcon, text: "Confirma tu pedido" },
                   { icon: CreditCardIcon, text: "Paga en el mostrador" },
-                  { icon: PackageIcon, text: "Recoge tu pedido" },
+                  { icon: PackageIcon, text: "Recibe tu pedido" },
                 ].map((step, i) => (
                   <motion.div
                     key={i}

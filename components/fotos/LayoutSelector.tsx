@@ -199,57 +199,7 @@ export function LayoutSelector({
 
   return (
     <div className="space-y-6">
-      {/* Selector de tamano de foto */}
-      <div>
-        <h3 className="text-sm font-medium text-gray-700 mb-3">
-          Tamano de foto
-        </h3>
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-          {(Object.keys(PHOTO_SIZES) as PhotoSizeType[]).map((size, index) => {
-            const info = PHOTO_SIZES[size];
-            const isSelected = selectedSize === size;
-            return (
-              <motion.button
-                key={size}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => handleSizeSelect(size)}
-                className={cn(
-                  "relative flex-shrink-0 px-4 py-3 rounded-xl border-2 transition-all duration-200 text-center min-w-[80px]",
-                  isSelected
-                    ? "border-primary bg-primary/10 shadow-lg shadow-primary/20"
-                    : "border-gray-200 bg-white hover:border-gray-300"
-                )}
-              >
-                {isSelected && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute -top-2 -right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center shadow-md"
-                  >
-                    <CheckIcon className="w-3 h-3 text-black" />
-                  </motion.div>
-                )}
-                <div
-                  className={cn(
-                    "text-base font-bold",
-                    isSelected ? "text-black" : "text-gray-700"
-                  )}
-                >
-                  {info.displayName.split(" ")[0]}
-                </div>
-                <div className="text-xs text-gray-500 mt-0.5">
-                  {info.width}"x{info.height}"
-                </div>
-              </motion.button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Toggle Llenar/Ajustar - MOVIDO ARRIBA */}
+      {/* 1. Toggle Llenar/Ajustar - PRIMERO */}
       <div>
         <h3 className="text-sm font-medium text-gray-700 mb-3">
           Como ajustar la foto?
@@ -329,7 +279,57 @@ export function LayoutSelector({
         </div>
       </div>
 
-      {/* Selector de cantidad */}
+      {/* 2. Selector de tamano de foto */}
+      <div>
+        <h3 className="text-sm font-medium text-gray-700 mb-3">
+          Tamano de foto
+        </h3>
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+          {(Object.keys(PHOTO_SIZES) as PhotoSizeType[]).map((size, index) => {
+            const info = PHOTO_SIZES[size];
+            const isSelected = selectedSize === size;
+            return (
+              <motion.button
+                key={size}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleSizeSelect(size)}
+                className={cn(
+                  "relative flex-shrink-0 px-4 py-3 rounded-xl border-2 transition-all duration-200 text-center min-w-[80px]",
+                  isSelected
+                    ? "border-primary bg-primary/10 shadow-lg shadow-primary/20"
+                    : "border-gray-200 bg-white hover:border-gray-300"
+                )}
+              >
+                {isSelected && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-2 -right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center shadow-md"
+                  >
+                    <CheckIcon className="w-3 h-3 text-black" />
+                  </motion.div>
+                )}
+                <div
+                  className={cn(
+                    "text-base font-bold",
+                    isSelected ? "text-black" : "text-gray-700"
+                  )}
+                >
+                  {info.displayName.split(" ")[0]}
+                </div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  {info.width}"x{info.height}"
+                </div>
+              </motion.button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3. Selector de cantidad */}
       <div>
         <h3 className="text-sm font-medium text-gray-700 mb-3">
           {isMultiPhoto ? "Copias por foto" : "Cuantas copias quieres?"}
@@ -462,7 +462,7 @@ export function LayoutSelector({
         )}
       </div>
 
-      {/* Resumen de hojas y precio */}
+      {/* 4. Resumen de hojas (sin precios) */}
       {sheetsInfo && bestLayoutForSize && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -476,30 +476,8 @@ export function LayoutSelector({
             <div className="text-sm text-primary font-medium">
               {totalQuantity} {totalQuantity === 1 ? "copia" : "copias"} de tu foto
             </div>
-            <div className="text-xs text-gray-500 mt-1">
-              {fillMode === "fill" ? "Llenar (recorta)" : "Ajustar (sin recortar)"}
-            </div>
-          </div>
-
-          {/* Desglose de precio */}
-          <div className="mt-4 pt-4 border-t border-primary/20 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Impresion color</span>
-              <span className="text-gray-700">
-                ₡100 × {sheetsInfo.sheetsNeeded} = ₡{(100 * sheetsInfo.sheetsNeeded).toLocaleString()}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Papel fotografico</span>
-              <span className="text-gray-700">
-                ₡400 × {sheetsInfo.sheetsNeeded} = ₡{(400 * sheetsInfo.sheetsNeeded).toLocaleString()}
-              </span>
-            </div>
-            <div className="flex justify-between text-base font-bold pt-2 border-t border-primary/20">
-              <span className="text-black">Total estimado</span>
-              <span className="text-primary">
-                ₡{(500 * sheetsInfo.sheetsNeeded).toLocaleString()}
-              </span>
+            <div className="text-xs text-gray-500 mt-2">
+              {sheetsInfo.photosPerSheet} fotos por hoja
             </div>
           </div>
         </motion.div>

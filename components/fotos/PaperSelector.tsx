@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { CheckIcon, FileTextIcon, AwardIcon, LayersIcon, StickyNoteIcon, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PAPERS, getPapersForProduct, type PaperConfig } from "@/lib/config/papers";
+import { PAPER_SURCHARGES } from "@/lib/utils/price-calculator";
+import { formatPrice } from "@/lib/utils/price-calculator";
 import type { ProductType, PaperType } from "@/lib/supabase/types";
 
 // Mapeo de iconName a componentes de icono
@@ -81,7 +83,17 @@ export function PaperSelector({
                   </span>
                 )}
               </div>
-              <p className="text-sm text-gray-500 mt-1">{paper.description}</p>
+              <p className="text-sm text-gray-500 mt-0.5">{paper.description}</p>
+              {/* Precio del papel */}
+              <p className={cn(
+                "text-sm font-medium mt-1",
+                isSelected ? "text-primary" : "text-gray-600"
+              )}>
+                {PAPER_SURCHARGES[paper.code] === 0
+                  ? "Incluido en precio base"
+                  : `+${formatPrice(PAPER_SURCHARGES[paper.code])} por hoja`
+                }
+              </p>
             </div>
 
             {/* Check indicator */}

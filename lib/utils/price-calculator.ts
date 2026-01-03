@@ -22,9 +22,9 @@ export const PRINT_COSTS = {
 // Recargo adicional por tipo de papel especial (se suma al costo de impresión)
 export const PAPER_SURCHARGES: Record<PaperType, number> = {
   bond_normal: 0,           // Sin recargo - papel estándar
-  opalina: 170,             // Papel opalina
-  cartulina_lino: 170,      // Papel lino (mismo precio que opalina)
-  sticker_semigloss: 150,   // Papel sticker
+  opalina: 200,             // Papel opalina
+  cartulina_lino: 200,      // Papel lino
+  sticker_semigloss: 200,   // Papel sticker
   fotografico: 400,         // Papel fotográfico
 };
 

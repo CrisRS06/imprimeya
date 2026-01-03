@@ -256,8 +256,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Enriquecer ordenes con datos de precio calculados
+    const enrichedOrders = orders?.map((order: Record<string, unknown>) => {
+      const isColor = order.is_color !== false; // default true
+      const printCost = isColor ? PRINT_COSTS.color : PRINT_COSTS.blackWhite;
+
+      // Obtener tipo de papel desde design_data o paper_options
+      const designData = (order.design_data || {}) as Record<string, unknown>;
+      const paperOptions = order.paper_options as { type?: string } | null;
+      const dbPaperType = (designData.dbPaperType || paperOptions?.type || "bond_normal") as PaperType;
+      const paperSurcharge = PAPER_SURCHARGES[dbPaperType] || 0;
+
+      return {
+        ...order,
+        isColor,
+        printCost,
+        paperSurcharge,
+      };
+    }) || [];
+
     return NextResponse.json({
-      orders,
+      orders: enrichedOrders,
       total: count,
       limit,
       offset,

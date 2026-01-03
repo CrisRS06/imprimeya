@@ -19,6 +19,10 @@ interface OrderCardProps {
     created_at: string;
     print_sizes?: { name: string } | null;
     paper_options?: { display_name: string } | null;
+    // Campos calculados para desglose
+    isColor?: boolean;
+    printCost?: number;
+    paperSurcharge?: number;
   };
   onClick?: () => void;
   isNew?: boolean;
@@ -87,7 +91,17 @@ export function OrderCard({ order, onClick, isNew, className }: OrderCardProps) 
           <p className="font-bold text-lg text-black">
             {formatPrice(order.total)}
           </p>
-          <p className="text-xs text-gray-400 flex items-center justify-end gap-1">
+          {/* Mini-desglose */}
+          {order.printCost !== undefined && (
+            <p className="text-xs text-gray-500 mt-0.5">
+              {order.quantity}h × {formatPrice(order.printCost)}
+              {order.isColor ? " color" : " B/N"}
+              {order.paperSurcharge && order.paperSurcharge > 0 && (
+                <> + {formatPrice(order.paperSurcharge)}/h</>
+              )}
+            </p>
+          )}
+          <p className="text-xs text-gray-400 flex items-center justify-end gap-1 mt-1">
             <ClockIcon className="w-3 h-3" />
             {formatTimeAgo(order.created_at)}
           </p>

@@ -332,22 +332,28 @@ export default function PrintPage({
 
           {/* Precio y boton de entregado */}
           <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-200">
-            <div className="bg-emerald-50 rounded-xl px-6 py-4">
-              <p className="text-sm text-emerald-600 font-medium mb-2">Desglose ({sheetsNeeded} {sheetsNeeded === 1 ? "hoja" : "hojas"})</p>
-              <div className="text-sm text-emerald-700 space-y-1">
-                <p className="flex justify-between">
-                  <span>Impresion {data.order.isColor ? "color" : "B/N"}:</span>
-                  <span>{formatPrice(data.order.printCost * sheetsNeeded)}</span>
-                </p>
+            <div className="bg-emerald-50 rounded-xl px-6 py-4 min-w-[280px]">
+              <p className="text-sm text-emerald-600 font-medium mb-3">
+                Desglose ({sheetsNeeded} {sheetsNeeded === 1 ? "hoja" : "hojas"})
+              </p>
+              <div className="text-sm space-y-2 font-mono">
+                <div className="flex justify-between text-emerald-700">
+                  <span>Impresion {data.order.isColor ? "color" : "B/N"}</span>
+                  <span>
+                    {formatPrice(data.order.printCost)} × {sheetsNeeded} = {formatPrice(data.order.printCost * sheetsNeeded)}
+                  </span>
+                </div>
                 {data.order.paperSurcharge > 0 && (
-                  <p className="flex justify-between">
-                    <span>Papel {data.order.paperDisplayName}:</span>
-                    <span>{formatPrice(data.order.paperSurcharge * sheetsNeeded)}</span>
-                  </p>
+                  <div className="flex justify-between text-emerald-700">
+                    <span>Papel {data.order.paperDisplayName}</span>
+                    <span>
+                      {formatPrice(data.order.paperSurcharge)} × {sheetsNeeded} = {formatPrice(data.order.paperSurcharge * sheetsNeeded)}
+                    </span>
+                  </div>
                 )}
               </div>
-              <div className="border-t border-emerald-300 mt-2 pt-2 flex justify-between items-center">
-                <span className="text-emerald-700 font-medium">Total:</span>
+              <div className="border-t-2 border-emerald-300 mt-3 pt-3 flex justify-between items-center">
+                <span className="text-emerald-700 font-bold">TOTAL:</span>
                 <span className="text-2xl font-bold text-emerald-700">
                   {formatPrice(data.order.total)}
                 </span>

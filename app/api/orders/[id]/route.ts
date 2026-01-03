@@ -77,10 +77,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Timestamps especiales segun estado
-    if (body.status === "ready") {
-      updateData.ready_at = new Date().toISOString();
-    } else if (body.status === "delivered") {
+    // Timestamp cuando se entrega
+    if (body.status === "delivered") {
       updateData.delivered_at = new Date().toISOString();
     }
 

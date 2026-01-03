@@ -11,8 +11,6 @@ import {
   RefreshCwIcon,
   FilterIcon,
   ClockIcon,
-  PrinterIcon,
-  CheckCircleIcon,
   PackageIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -32,8 +30,6 @@ interface Order {
 const STATUS_FILTERS: { value: OrderStatus | "all"; label: string; icon: React.ReactNode }[] = [
   { value: "all", label: "Todos", icon: <FilterIcon className="w-4 h-4" /> },
   { value: "pending", label: "Pendientes", icon: <ClockIcon className="w-4 h-4" /> },
-  { value: "processing", label: "Procesando", icon: <PrinterIcon className="w-4 h-4" /> },
-  { value: "ready", label: "Listos", icon: <CheckCircleIcon className="w-4 h-4" /> },
   { value: "delivered", label: "Entregados", icon: <PackageIcon className="w-4 h-4" /> },
 ];
 
@@ -115,14 +111,13 @@ export default function StaffDashboardPage() {
       return next;
     });
 
-    router.push(`/pedido/${order.id}`);
+    // Navegar directo a la vista de impresion
+    router.push(`/imprimir/${order.id}`);
   };
 
   // Contadores por estado
   const counts = {
     pending: orders.filter((o) => o.status === "pending").length,
-    processing: orders.filter((o) => o.status === "processing").length,
-    ready: orders.filter((o) => o.status === "ready").length,
     delivered: orders.filter((o) => o.status === "delivered").length,
   };
 
@@ -133,7 +128,7 @@ export default function StaffDashboardPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Stats cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <StatsCard
           label="Pendientes"
           value={counts.pending}
@@ -141,20 +136,9 @@ export default function StaffDashboardPage() {
           highlight={counts.pending > 0}
         />
         <StatsCard
-          label="Procesando"
-          value={counts.processing}
-          color="bg-accent"
-        />
-        <StatsCard
-          label="Listos"
-          value={counts.ready}
-          color="bg-emerald-500"
-          highlight={counts.ready > 0}
-        />
-        <StatsCard
           label="Entregados hoy"
           value={counts.delivered}
-          color="bg-gray-400"
+          color="bg-emerald-500"
         />
       </div>
 

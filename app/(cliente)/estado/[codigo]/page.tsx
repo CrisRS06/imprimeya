@@ -9,8 +9,6 @@ import { formatOrderCode } from "@/lib/utils/code-generator";
 import {
   ArrowLeftIcon,
   ClockIcon,
-  PrinterIcon,
-  CheckCircleIcon,
   PackageIcon,
   XCircleIcon,
   RefreshCwIcon,
@@ -52,31 +50,17 @@ const STATUS_CONFIG: Record<
 > = {
   pending: {
     label: "Pendiente",
-    description: "Tu pedido esta en cola",
+    description: "Tu pedido esta en cola, pronto estara listo",
     icon: ClockIcon,
     color: "text-primary",
     bgColor: "bg-primary/20",
-  },
-  processing: {
-    label: "Procesando",
-    description: "Tu pedido se esta imprimiendo",
-    icon: PrinterIcon,
-    color: "text-accent",
-    bgColor: "bg-accent/20",
-  },
-  ready: {
-    label: "Listo",
-    description: "Tu pedido esta listo para recoger",
-    icon: CheckCircleIcon,
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-100",
   },
   delivered: {
     label: "Entregado",
     description: "Pedido completado",
     icon: PackageIcon,
-    color: "text-gray-600",
-    bgColor: "bg-gray-100",
+    color: "text-emerald-600",
+    bgColor: "bg-emerald-100",
   },
   cancelled: {
     label: "Cancelado",
@@ -268,25 +252,12 @@ export default function EstadoPedidoPage({
                 </div>
               </div>
 
-              {/* Timeline */}
+              {/* Timeline simplificado */}
               <div className="mt-6 space-y-3">
                 <TimelineItem
                   label="Pedido creado"
                   time={formatDate(order.created_at)}
                   completed
-                />
-                <TimelineItem
-                  label="En proceso"
-                  completed={["processing", "ready", "delivered"].includes(
-                    order.status
-                  )}
-                  active={order.status === "processing"}
-                />
-                <TimelineItem
-                  label="Listo para recoger"
-                  time={order.ready_at ? formatDate(order.ready_at) : undefined}
-                  completed={["ready", "delivered"].includes(order.status)}
-                  active={order.status === "ready"}
                 />
                 <TimelineItem
                   label="Entregado"
@@ -296,6 +267,7 @@ export default function EstadoPedidoPage({
                       : undefined
                   }
                   completed={order.status === "delivered"}
+                  active={order.status === "pending"}
                   isLast
                 />
               </div>
@@ -345,16 +317,16 @@ export default function EstadoPedidoPage({
             </CardContent>
           </Card>
 
-          {/* Mensaje si esta listo */}
-          {order.status === "ready" && (
+          {/* Mensaje si esta pendiente */}
+          {order.status === "pending" && (
             <Card className="bg-primary/10 border-primary/20">
               <CardContent className="p-4 text-center">
-                <CheckCircleIcon className="w-8 h-8 text-primary mx-auto mb-2" />
+                <ClockIcon className="w-8 h-8 text-primary mx-auto mb-2" />
                 <p className="font-semibold text-black">
-                  Tu pedido esta listo
+                  Pedido en proceso
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
-                  Acercate al mostrador y presenta tu codigo
+                  Te avisaremos cuando este listo. Presenta tu codigo en el mostrador.
                 </p>
               </CardContent>
             </Card>

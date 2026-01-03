@@ -4,12 +4,15 @@ import { useState, useEffect, use, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { getLayoutById, LETTER_WIDTH, LETTER_HEIGHT } from "@/lib/config/photo-layouts";
+import { formatPrice } from "@/lib/utils/price-calculator";
 import type { PhotoLayout } from "@/lib/supabase/types";
+import { toast } from "sonner";
 import {
   PrinterIcon,
   ArrowLeftIcon,
   Loader2Icon,
   AlertCircleIcon,
+  CheckCircleIcon,
 } from "lucide-react";
 
 interface PrintData {
@@ -18,6 +21,7 @@ interface PrintData {
     code: string;
     status: string;
     quantity: number;
+    total: number;
     productType: string;
     sizeName: string;
     paperType: string;
@@ -143,6 +147,7 @@ export default function PrintPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [printing, setPrinting] = useState(false);
+  const [markingDelivered, setMarkingDelivered] = useState(false);
 
   useEffect(() => {
     async function fetchPrintData() {
@@ -172,6 +177,30 @@ export default function PrintPage({
       setPrinting(false);
     }, 100);
   }, []);
+
+  const handleMarkDelivered = useCallback(async () => {
+    if (!data) return;
+
+    setMarkingDelivered(true);
+    try {
+      const response = await fetch(`/api/orders/${data.order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "delivered" }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || "Error actualizando estado");
+      }
+
+      toast.success("Pedido marcado como entregado");
+      router.push("/dashboard");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al marcar como entregado");
+      setMarkingDelivered(false);
+    }
+  }, [data, router]);
 
   if (loading) {
     return (
@@ -263,10 +292,11 @@ export default function PrintPage({
         </div>
       </div>
 
-      {/* Info del pedido - NO se imprime */}
+      {/* Info del pedido y acciones - NO se imprime */}
       <div className="no-print bg-gray-50 border-b pt-16 pb-4 px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          {/* Detalles del pedido */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
             <div>
               <span className="text-gray-500">Tipo:</span>
               <span className="ml-2 font-medium">{data.order.productType}</span>
@@ -285,6 +315,38 @@ export default function PrintPage({
                 {totalPhotos} en {sheetsNeeded} {sheetsNeeded === 1 ? "hoja" : "hojas"}
               </span>
             </div>
+          </div>
+
+          {/* Precio y boton de entregado */}
+          <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-200">
+            <div className="bg-emerald-50 rounded-xl px-6 py-3">
+              <p className="text-sm text-emerald-600 font-medium">Total a cobrar</p>
+              <p className="text-3xl font-bold text-emerald-700">
+                {formatPrice(data.order.total)}
+              </p>
+            </div>
+
+            {data.order.status === "pending" && (
+              <Button
+                onClick={handleMarkDelivered}
+                disabled={markingDelivered}
+                className="h-14 px-8 bg-emerald-500 hover:bg-emerald-600 text-white text-lg font-semibold rounded-xl"
+              >
+                {markingDelivered ? (
+                  <Loader2Icon className="w-5 h-5 mr-2 animate-spin" />
+                ) : (
+                  <CheckCircleIcon className="w-5 h-5 mr-2" />
+                )}
+                Marcar como Entregado
+              </Button>
+            )}
+
+            {data.order.status === "delivered" && (
+              <div className="bg-gray-100 rounded-xl px-6 py-3 text-center">
+                <p className="text-sm text-gray-500">Estado</p>
+                <p className="text-lg font-semibold text-gray-700">Ya entregado</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

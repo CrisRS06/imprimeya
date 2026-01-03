@@ -19,9 +19,12 @@ export type PaperType = 'bond_normal' | 'opalina' | 'cartulina_lino' | 'sticker_
 export type LegacyPaperType = 'normal' | 'glossy' | 'matte' | 'sticker' | 'opalina' | 'lino'
 
 // ============================================
-// ESTADO DE ORDEN
+// ESTADO DE ORDEN (Simplificado)
 // ============================================
-export type OrderStatus = 'pending' | 'processing' | 'ready' | 'delivered' | 'cancelled'
+// pending: Pedido nuevo, esperando ser procesado
+// delivered: Pedido impreso, cobrado y entregado
+// cancelled: Pedido cancelado
+export type OrderStatus = 'pending' | 'delivered' | 'cancelled'
 
 // ============================================
 // TIPOS DE FILA PARA USO DIRECTO

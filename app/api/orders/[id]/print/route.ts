@@ -72,6 +72,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         code: order.code,
         status: order.status,
         quantity: order.quantity,
+        total: order.total,
         productType: order.product_type,
         sizeName,
         paperType: designData.paperType || order.paper_options?.type,

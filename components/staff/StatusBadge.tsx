@@ -18,20 +18,10 @@ const STATUS_CONFIG: Record<
     bgColor: "bg-primary/20",
     textColor: "text-primary",
   },
-  processing: {
-    label: "Procesando",
-    bgColor: "bg-accent/20",
-    textColor: "text-accent",
-  },
-  ready: {
-    label: "Listo",
-    bgColor: "bg-emerald-100",
-    textColor: "text-emerald-700",
-  },
   delivered: {
     label: "Entregado",
-    bgColor: "bg-gray-100",
-    textColor: "text-gray-600",
+    bgColor: "bg-emerald-100",
+    textColor: "text-emerald-700",
   },
   cancelled: {
     label: "Cancelado",

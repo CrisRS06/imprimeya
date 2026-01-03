@@ -8,10 +8,9 @@ import { useOrder } from "@/lib/context/OrderContext";
 import { PRINT_SIZES, type PrintSizeName } from "@/lib/utils/image-validation";
 import {
   calculatePrice,
-  PAPER_MULTIPLIERS,
   PAPER_NAMES,
   PAPER_SURCHARGES,
-  PHOTO_PRINT_COST,
+  PRINT_COSTS,
   formatPrice,
 } from "@/lib/utils/price-calculator";
 import {
@@ -24,6 +23,8 @@ import {
   ImageIcon,
   StickyNoteIcon,
   CircleIcon,
+  PaletteIcon,
+  CheckCircleIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { hapticFeedback } from "@/hooks/useCanvasGestures";
@@ -59,9 +60,9 @@ function OpcionesPageContent() {
   const [selectedSize, setSelectedSize] = useState<PrintSizeName>(
     state.printOptions.sizeName || "4x6"
   );
-  // Para fotos siempre es papel fotográfico
   const [selectedPaper, setSelectedPaper] = useState<PaperType>("fotografico");
   const [quantity, setQuantity] = useState(state.printOptions.quantity || 1);
+  const [isColor, setIsColor] = useState(true);
 
   // Calcular precio
   const priceBreakdown = calculatePrice({
@@ -69,6 +70,7 @@ function OpcionesPageContent() {
     paperType: selectedPaper,
     quantity,
     productType,
+    isColor,
   });
 
   const handleQuantityChange = (delta: number) => {
@@ -96,6 +98,8 @@ function OpcionesPageContent() {
       paperType: selectedPaper,
       quantity,
     });
+    // Guardar isColor para el resumen
+    sessionStorage.setItem("photoIsColor", isColor.toString());
     hapticFeedback("medium");
     router.push(`/resumen?type=${productType}`);
   };
@@ -124,8 +128,6 @@ function OpcionesPageContent() {
             <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
               {sizeOptions.map((option, index) => {
                 const isSelected = selectedSize === option.value;
-                // Todas las fotos cuestan lo mismo: ₡500
-                const basePrice = PHOTO_PRINT_COST;
 
                 return (
                   <motion.button
@@ -160,30 +162,153 @@ function OpcionesPageContent() {
                     <span className="text-xs text-gray-500 mt-0.5">
                       {option.dimensions}
                     </span>
-                    <span className={cn(
-                      "text-sm font-semibold mt-2",
-                      isSelected ? "text-sky-600" : "text-gray-600"
-                    )}>
-                      {formatPrice(basePrice)}
-                    </span>
                   </motion.button>
                 );
               })}
             </div>
           </section>
 
-          {/* Tipo de papel - Para fotos siempre es fotográfico */}
+          {/* Tipo de impresión - Color/B&N */}
+          <section>
+            <h2 className="text-sm font-medium text-gray-700 mb-3">Tipo de impresion</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Color */}
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setIsColor(true)}
+                className={cn(
+                  "relative p-4 rounded-2xl border-2 transition-all text-center",
+                  isColor
+                    ? "border-sky-500 bg-sky-50 shadow-md"
+                    : "border-gray-200 bg-white hover:border-gray-300"
+                )}
+              >
+                <div
+                  className={cn(
+                    "w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center",
+                    isColor ? "bg-sky-100" : "bg-gray-100"
+                  )}
+                >
+                  <PaletteIcon
+                    className={cn(
+                      "w-6 h-6",
+                      isColor ? "text-sky-600" : "text-gray-400"
+                    )}
+                  />
+                </div>
+                <span
+                  className={cn(
+                    "font-semibold block",
+                    isColor ? "text-sky-700" : "text-gray-700"
+                  )}
+                >
+                  A color
+                </span>
+                <span className={cn(
+                  "text-sm",
+                  isColor ? "text-sky-600" : "text-gray-500"
+                )}>
+                  {formatPrice(PRINT_COSTS.color)}/hoja
+                </span>
+                {isColor && (
+                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-sky-500 flex items-center justify-center">
+                    <CheckCircleIcon className="w-3 h-3 text-white" />
+                  </div>
+                )}
+              </motion.button>
+
+              {/* B&N */}
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setIsColor(false)}
+                className={cn(
+                  "relative p-4 rounded-2xl border-2 transition-all text-center",
+                  !isColor
+                    ? "border-sky-500 bg-sky-50 shadow-md"
+                    : "border-gray-200 bg-white hover:border-gray-300"
+                )}
+              >
+                <div
+                  className={cn(
+                    "w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center",
+                    !isColor ? "bg-sky-100" : "bg-gray-100"
+                  )}
+                >
+                  <CircleIcon
+                    className={cn(
+                      "w-6 h-6",
+                      !isColor ? "text-sky-600" : "text-gray-400"
+                    )}
+                  />
+                </div>
+                <span
+                  className={cn(
+                    "font-semibold block",
+                    !isColor ? "text-sky-700" : "text-gray-700"
+                  )}
+                >
+                  Blanco y negro
+                </span>
+                <span className={cn(
+                  "text-sm",
+                  !isColor ? "text-sky-600" : "text-gray-500"
+                )}>
+                  {formatPrice(PRINT_COSTS.blackWhite)}/hoja
+                </span>
+                {!isColor && (
+                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-sky-500 flex items-center justify-center">
+                    <CheckCircleIcon className="w-3 h-3 text-white" />
+                  </div>
+                )}
+              </motion.button>
+            </div>
+          </section>
+
+          {/* Tipo de papel */}
           <section>
             <h2 className="text-sm font-medium text-gray-700 mb-3">Papel</h2>
-            <div className="bg-sky-50 border-2 border-sky-200 rounded-2xl p-4 flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-sky-100 flex items-center justify-center">
-                <SparklesIcon className="w-6 h-6 text-sky-600" />
-              </div>
-              <div>
-                <p className="font-semibold text-sky-700">Papel Fotográfico</p>
-                <p className="text-sm text-sky-600">Acabado brillante profesional</p>
-              </div>
-              <CheckIcon className="w-5 h-5 text-sky-500 ml-auto" />
+            <div className="space-y-2">
+              {(["fotografico", "opalina", "sticker_semigloss", "bond_normal"] as PaperType[]).map((paper) => {
+                const isSelected = selectedPaper === paper;
+                const surcharge = PAPER_SURCHARGES[paper];
+
+                return (
+                  <motion.button
+                    key={paper}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handlePaperSelect(paper)}
+                    className={cn(
+                      "w-full p-4 rounded-xl border-2 flex items-center justify-between transition-all",
+                      isSelected
+                        ? "border-sky-500 bg-sky-50"
+                        : "border-gray-200 bg-white hover:border-gray-300"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      {isSelected && (
+                        <div className="w-5 h-5 rounded-full bg-sky-500 flex items-center justify-center">
+                          <CheckCircleIcon className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+                      {!isSelected && (
+                        <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
+                      )}
+                      <span className={cn(
+                        "font-medium",
+                        isSelected ? "text-sky-700" : "text-gray-700"
+                      )}>
+                        {PAPER_NAMES[paper]}
+                      </span>
+                    </div>
+                    <span className={cn(
+                      "text-sm font-semibold",
+                      isSelected ? "text-sky-600" : "text-gray-500"
+                    )}>
+                      {surcharge > 0 ? `+${formatPrice(surcharge)}` : "Incluido"}
+                    </span>
+                  </motion.button>
+                );
+              })}
             </div>
           </section>
 
@@ -280,7 +405,7 @@ function OpcionesPageContent() {
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-600">
-                {quantity}x {selectedSize}
+                {quantity}x {selectedSize} - {isColor ? "Color" : "B&N"}
               </p>
               <p className="text-xs text-gray-500">
                 {PAPER_NAMES[selectedPaper]} - {formatPrice(priceBreakdown.pricePerUnit)} c/u

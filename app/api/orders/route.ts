@@ -4,7 +4,6 @@ import { generateOrderCode } from "@/lib/utils/code-generator";
 import { inngest } from "@/lib/inngest/client";
 import type { ProductType, OrderStatus, PaperType } from "@/lib/supabase/types";
 import {
-  PHOTO_PRINT_COST,
   PRINT_COSTS,
   PAPER_SURCHARGES,
 } from "@/lib/utils/price-calculator";
@@ -129,27 +128,20 @@ export async function POST(request: NextRequest) {
     const printSizeId: string | null = printSize?.id || null;
 
     // =============================================
-    // NUEVO SISTEMA DE PRECIOS
+    // SISTEMA DE PRECIOS UNIFICADO
     // =============================================
-    // Fotos (papel fotográfico): ₡500 por impresión (incluye papel)
-    // Documentos color: ₡100/página + recargo papel
-    // Documentos B&N: ₡50/página + recargo papel
-    // Recargos: opalina +170, lino +170, sticker +150
+    // Impresión color: ₡100/hoja
+    // Impresión B&N: ₡50/hoja
+    // + Recargo papel: fotográfico +400, opalina/lino +170, sticker +150
     // =============================================
 
-    let pricePerUnit: number;
     const frontendPaperType = body.paperType as PaperType;
     const isColor = body.isColor !== false; // Default true para color
 
-    if (body.productType === "photo") {
-      // FOTOS: Precio fijo de ₡500 (incluye papel fotográfico)
-      pricePerUnit = PHOTO_PRINT_COST;
-    } else {
-      // DOCUMENTOS: Costo de impresión + recargo de papel
-      const printCost = isColor ? PRINT_COSTS.color : PRINT_COSTS.blackWhite;
-      const paperSurcharge = PAPER_SURCHARGES[frontendPaperType] || 0;
-      pricePerUnit = printCost + paperSurcharge;
-    }
+    // Misma lógica para fotos y documentos
+    const printCost = isColor ? PRINT_COSTS.color : PRINT_COSTS.blackWhite;
+    const paperSurcharge = PAPER_SURCHARGES[frontendPaperType] || 0;
+    const pricePerUnit = printCost + paperSurcharge;
 
     // Calcular totales
     const subtotal = pricePerUnit * body.quantity;

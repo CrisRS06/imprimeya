@@ -73,14 +73,14 @@ export const PHOTO_SIZES: Record<PhotoSizeType, PhotoSizeInfo> = {
     displayName: 'Wallet (2x3)',
     width: 2,
     height: 3,
-    maxPerSheet: 8,
+    maxPerSheet: 12,
   },
   'carnet': {
     name: 'carnet',
     displayName: 'Carnet (1.5x2)',
     width: 1.5,
     height: 2,
-    maxPerSheet: 12,
+    maxPerSheet: 16,
   },
 }
 
@@ -264,32 +264,39 @@ export const PHOTO_LAYOUTS: PhotoLayout[] = [
     is_active: true,
     sort_order: 7,
   },
-  // Wallet - Ocho fotos 4x2 grid
+  // Wallet - Doce fotos 4x3 grid (LLENA LA HOJA)
   // NOTA: Fotos escaladas a 1.875x2.8125 para respetar margenes seguros
   {
-    id: '8x-wallet',
-    name: '8x-wallet',
-    display_name: '8 Wallet',
-    description: 'Ocho fotos tamano cartera',
+    id: '12x-wallet',
+    name: '12x-wallet',
+    display_name: '12 Wallet',
+    description: 'Doce fotos tamano cartera',
     photo_size: 'wallet',
     photo_width_inches: 1.875,
     photo_height_inches: 2.8125,
-    photos_per_sheet: 8,
+    photos_per_sheet: 12,
     allows_repeat: true,
     allows_different: true,
     layout_data: {
-      // 4 columnas x 2 filas: 4x1.875" + 3 gaps de 0.125" = 7.875"
+      // 4 columnas x 3 filas: 4x1.875" + 3 gaps de 0.125" = 7.875"
       // Margen horizontal: (8.0 - 7.875)/2 + 0.25 = 0.3125
-      // Alto: 2x2.8125" + 1 gap de 0.25" = 5.875", centrado: 0.25 + (10.25-5.875)/2 = 2.4375
+      // Alto: 3x2.8125" + 2 gaps de 0.25" = 8.9375", centrado: 0.25 + (10.25-8.9375)/2 = 0.90625
       positions: [
-        { x: 0.3125, y: 2.4375, width: 1.875, height: 2.8125, rotation: 0 },
-        { x: 2.3125, y: 2.4375, width: 1.875, height: 2.8125, rotation: 0 },
-        { x: 4.3125, y: 2.4375, width: 1.875, height: 2.8125, rotation: 0 },
-        { x: 6.3125, y: 2.4375, width: 1.875, height: 2.8125, rotation: 0 },
-        { x: 0.3125, y: 5.5, width: 1.875, height: 2.8125, rotation: 0 },
-        { x: 2.3125, y: 5.5, width: 1.875, height: 2.8125, rotation: 0 },
-        { x: 4.3125, y: 5.5, width: 1.875, height: 2.8125, rotation: 0 },
-        { x: 6.3125, y: 5.5, width: 1.875, height: 2.8125, rotation: 0 },
+        // Fila 1
+        { x: 0.3125, y: 0.90625, width: 1.875, height: 2.8125, rotation: 0 },
+        { x: 2.3125, y: 0.90625, width: 1.875, height: 2.8125, rotation: 0 },
+        { x: 4.3125, y: 0.90625, width: 1.875, height: 2.8125, rotation: 0 },
+        { x: 6.3125, y: 0.90625, width: 1.875, height: 2.8125, rotation: 0 },
+        // Fila 2
+        { x: 0.3125, y: 3.96875, width: 1.875, height: 2.8125, rotation: 0 },
+        { x: 2.3125, y: 3.96875, width: 1.875, height: 2.8125, rotation: 0 },
+        { x: 4.3125, y: 3.96875, width: 1.875, height: 2.8125, rotation: 0 },
+        { x: 6.3125, y: 3.96875, width: 1.875, height: 2.8125, rotation: 0 },
+        // Fila 3
+        { x: 0.3125, y: 7.03125, width: 1.875, height: 2.8125, rotation: 0 },
+        { x: 2.3125, y: 7.03125, width: 1.875, height: 2.8125, rotation: 0 },
+        { x: 4.3125, y: 7.03125, width: 1.875, height: 2.8125, rotation: 0 },
+        { x: 6.3125, y: 7.03125, width: 1.875, height: 2.8125, rotation: 0 },
       ],
     },
     compatible_papers: ['fotografico', 'bond_normal'],
@@ -328,38 +335,43 @@ export const PHOTO_LAYOUTS: PhotoLayout[] = [
     is_active: true,
     sort_order: 9,
   },
-  // Carnet - Doce fotos 4x3 grid (LLENA LA HOJA)
+  // Carnet - Dieciseis fotos 4x4 grid (LLENA LA HOJA)
   {
-    id: '12x-carnet',
-    name: '12x-carnet',
-    display_name: '12 Carnet',
-    description: 'Doce fotos tipo carnet',
+    id: '16x-carnet',
+    name: '16x-carnet',
+    display_name: '16 Carnet',
+    description: 'Dieciseis fotos tipo carnet',
     photo_size: 'carnet',
     photo_width_inches: 1.5,
     photo_height_inches: 2,
-    photos_per_sheet: 12,
+    photos_per_sheet: 16,
     allows_repeat: true,
     allows_different: true,
     layout_data: {
-      // 4x3 grid: ancho 6" + 3 gaps de 0.25" = 6.75"
+      // 4x4 grid: ancho 6" + 3 gaps de 0.25" = 6.75"
       // Margen horizontal: (8.0 - 6.75)/2 + 0.25 = 0.875
-      // Alto 6" + 2 gaps de 0.75" = 7.5", centrado: 0.25 + (10.25-7.5)/2 = 1.625
+      // Alto 8" + 3 gaps de 0.25" = 8.75", centrado: 0.25 + (10.25-8.75)/2 = 1.0
       positions: [
         // Fila 1
-        { x: 0.875, y: 1.625, width: 1.5, height: 2, rotation: 0 },
-        { x: 2.625, y: 1.625, width: 1.5, height: 2, rotation: 0 },
-        { x: 4.375, y: 1.625, width: 1.5, height: 2, rotation: 0 },
-        { x: 6.125, y: 1.625, width: 1.5, height: 2, rotation: 0 },
+        { x: 0.875, y: 1.0, width: 1.5, height: 2, rotation: 0 },
+        { x: 2.625, y: 1.0, width: 1.5, height: 2, rotation: 0 },
+        { x: 4.375, y: 1.0, width: 1.5, height: 2, rotation: 0 },
+        { x: 6.125, y: 1.0, width: 1.5, height: 2, rotation: 0 },
         // Fila 2
-        { x: 0.875, y: 4.375, width: 1.5, height: 2, rotation: 0 },
-        { x: 2.625, y: 4.375, width: 1.5, height: 2, rotation: 0 },
-        { x: 4.375, y: 4.375, width: 1.5, height: 2, rotation: 0 },
-        { x: 6.125, y: 4.375, width: 1.5, height: 2, rotation: 0 },
+        { x: 0.875, y: 3.25, width: 1.5, height: 2, rotation: 0 },
+        { x: 2.625, y: 3.25, width: 1.5, height: 2, rotation: 0 },
+        { x: 4.375, y: 3.25, width: 1.5, height: 2, rotation: 0 },
+        { x: 6.125, y: 3.25, width: 1.5, height: 2, rotation: 0 },
         // Fila 3
-        { x: 0.875, y: 7.125, width: 1.5, height: 2, rotation: 0 },
-        { x: 2.625, y: 7.125, width: 1.5, height: 2, rotation: 0 },
-        { x: 4.375, y: 7.125, width: 1.5, height: 2, rotation: 0 },
-        { x: 6.125, y: 7.125, width: 1.5, height: 2, rotation: 0 },
+        { x: 0.875, y: 5.5, width: 1.5, height: 2, rotation: 0 },
+        { x: 2.625, y: 5.5, width: 1.5, height: 2, rotation: 0 },
+        { x: 4.375, y: 5.5, width: 1.5, height: 2, rotation: 0 },
+        { x: 6.125, y: 5.5, width: 1.5, height: 2, rotation: 0 },
+        // Fila 4
+        { x: 0.875, y: 7.75, width: 1.5, height: 2, rotation: 0 },
+        { x: 2.625, y: 7.75, width: 1.5, height: 2, rotation: 0 },
+        { x: 4.375, y: 7.75, width: 1.5, height: 2, rotation: 0 },
+        { x: 6.125, y: 7.75, width: 1.5, height: 2, rotation: 0 },
       ],
     },
     compatible_papers: ['fotografico', 'bond_normal'],

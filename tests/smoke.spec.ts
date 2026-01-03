@@ -5,12 +5,14 @@ test.describe('Smoke Tests - All Pages Load', () => {
   test('home page loads', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveTitle(/ImprimeYA/i);
-    await expect(page.getByRole('heading', { name: /fotos|documentos/i })).toBeVisible();
+    // Check that main product cards exist
+    await expect(page.getByRole('heading', { name: 'Fotos' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Documentos' })).toBeVisible();
   });
 
   test('fotos page loads', async ({ page }) => {
     await page.goto('/fotos');
-    await expect(page.getByText(/subir|agregar fotos/i)).toBeVisible();
+    await expect(page.getByText(/seleccionar|arrastra/i)).toBeVisible();
   });
 
   test('fotos layout page loads', async ({ page }) => {
@@ -26,12 +28,14 @@ test.describe('Smoke Tests - All Pages Load', () => {
 
   test('documento page loads', async ({ page }) => {
     await page.goto('/documento');
-    await expect(page.getByText(/documento|pdf|subir/i)).toBeVisible();
+    // Check for the main heading
+    await expect(page.getByRole('heading', { name: 'Documentos' })).toBeVisible();
   });
 
   test('estado page loads', async ({ page }) => {
     await page.goto('/estado');
-    await expect(page.getByText(/estado|codigo|pedido/i)).toBeVisible();
+    // Check for code input
+    await expect(page.getByPlaceholder(/ABC123/i)).toBeVisible();
   });
 
   test('resumen page loads', async ({ page }) => {
@@ -43,26 +47,30 @@ test.describe('Smoke Tests - All Pages Load', () => {
   // Staff pages
   test('dashboard page loads', async ({ page }) => {
     await page.goto('/dashboard');
-    await expect(page.getByText(/pendientes|pedidos/i)).toBeVisible();
+    // Dashboard shows PIN login first
+    await expect(page.getByRole('heading', { name: /acceso staff/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /entrar/i })).toBeVisible();
   });
 });
 
 test.describe('Navigation Tests', () => {
   test('can navigate from home to fotos', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('link', { name: /fotos/i }).click();
+    // The cards are buttons, not links
+    await page.locator('button', { hasText: 'Fotos' }).click();
     await expect(page).toHaveURL('/fotos');
   });
 
   test('can navigate from home to documento', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('link', { name: /documento/i }).click();
+    await page.locator('button', { hasText: 'Documentos' }).click();
     await expect(page).toHaveURL('/documento');
   });
 
   test('can navigate from home to estado', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('link', { name: /estado|consultar/i }).click();
+    // "Consultar estado de pedido" is a button
+    await page.getByRole('button', { name: /consultar estado/i }).click();
     await expect(page).toHaveURL('/estado');
   });
 });

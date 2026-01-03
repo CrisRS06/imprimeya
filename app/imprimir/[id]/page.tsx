@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, use, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { getLayoutById, LETTER_WIDTH, LETTER_HEIGHT } from "@/lib/config/photo-layouts";
 import { formatPrice } from "@/lib/utils/price-calculator";
+import { printWithIframe, type PrintPageData } from "@/lib/utils/print-iframe";
 import type { PhotoLayout } from "@/lib/supabase/types";
 import { toast } from "sonner";
 import {
@@ -13,7 +14,6 @@ import {
   Loader2Icon,
   AlertCircleIcon,
   CheckCircleIcon,
-  DownloadIcon,
 } from "lucide-react";
 
 interface PrintData {
@@ -153,15 +153,12 @@ export default function PrintPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const isPdfMode = searchParams.get("pdf") === "true";
 
   const [data, setData] = useState<PrintData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [printing, setPrinting] = useState(false);
   const [markingDelivered, setMarkingDelivered] = useState(false);
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   useEffect(() => {
     async function fetchPrintData() {
@@ -183,14 +180,6 @@ export default function PrintPage({
 
     fetchPrintData();
   }, [id]);
-
-  const handlePrint = useCallback(() => {
-    setPrinting(true);
-    setTimeout(() => {
-      window.print();
-      setPrinting(false);
-    }, 100);
-  }, []);
 
   const handleMarkDelivered = useCallback(async () => {
     if (!data) return;
@@ -215,37 +204,6 @@ export default function PrintPage({
       setMarkingDelivered(false);
     }
   }, [data, router]);
-
-  const handleDownloadPdf = useCallback(async () => {
-    if (!data) return;
-
-    setDownloadingPdf(true);
-    try {
-      const response = await fetch(`/api/orders/${data.order.id}/pdf`);
-
-      if (!response.ok) {
-        const result = await response.json();
-        throw new Error(result.error || "Error generando PDF");
-      }
-
-      // Descargar el PDF
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `pedido-${data.order.code}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-
-      toast.success("PDF descargado");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Error al descargar PDF");
-    } finally {
-      setDownloadingPdf(false);
-    }
-  }, [data]);
 
   if (loading) {
     return (
@@ -299,30 +257,32 @@ export default function PrintPage({
     sheets.push(expandedPhotos.slice(start, end));
   }
 
-  // Modo PDF: solo renderizar las hojas sin controles (para Puppeteer)
-  if (isPdfMode) {
-    return (
-      <div
-        style={{
-          width: "8.5in",
-          margin: 0,
-          padding: 0,
-          backgroundColor: "white",
-        }}
-      >
-        {sheets.map((sheetPhotos, index) => (
-          <PrintSheet
-            key={index}
-            layout={layout}
-            photos={sheetPhotos}
-            sheetNumber={index}
-            totalSheets={sheetsNeeded}
-            fillMode={data.print.fillMode}
-          />
-        ))}
-      </div>
-    );
-  }
+  // Handler de impresión usando iframe aislado
+  const handlePrint = async () => {
+    setPrinting(true);
+
+    // Construir datos para el iframe
+    const pages: PrintPageData[] = sheets.map((sheetPhotos) => ({
+      photos: layout.layout_data.positions
+        .map((pos, idx) => ({
+          imageUrl: sheetPhotos[idx] || "",
+          x: pos.x,
+          y: pos.y,
+          width: pos.width,
+          height: pos.height,
+        }))
+        .filter((p) => p.imageUrl),
+    }));
+
+    try {
+      await printWithIframe(pages, data.order.code);
+    } catch (err) {
+      toast.error("Error al imprimir");
+      console.error(err);
+    } finally {
+      setPrinting(false);
+    }
+  };
 
   return (
     <>
@@ -348,31 +308,19 @@ export default function PrintPage({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={handleDownloadPdf}
-              disabled={downloadingPdf}
-            >
-              {downloadingPdf ? (
-                <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <DownloadIcon className="w-4 h-4 mr-2" />
-              )}
-              PDF
-            </Button>
-            <Button
-              onClick={handlePrint}
-              disabled={printing}
-            >
-              {printing ? (
-                <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <PrinterIcon className="w-4 h-4 mr-2" />
-              )}
-              Imprimir
-            </Button>
-          </div>
+          <Button
+            onClick={handlePrint}
+            disabled={printing}
+            size="lg"
+            className="px-6"
+          >
+            {printing ? (
+              <Loader2Icon className="w-5 h-5 mr-2 animate-spin" />
+            ) : (
+              <PrinterIcon className="w-5 h-5 mr-2" />
+            )}
+            Imprimir
+          </Button>
         </div>
       </div>
 

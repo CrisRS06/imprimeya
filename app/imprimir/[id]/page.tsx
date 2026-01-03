@@ -261,15 +261,16 @@ export default function PrintPage({
   const handlePrint = async () => {
     setPrinting(true);
 
-    // Construir datos para el iframe
+    // Convertir inches a pixels (96 DPI) para compatibilidad iOS Safari
+    const DPI = 96;
     const pages: PrintPageData[] = sheets.map((sheetPhotos) => ({
       photos: layout.layout_data.positions
         .map((pos, idx) => ({
           imageUrl: sheetPhotos[idx] || "",
-          x: pos.x,
-          y: pos.y,
-          width: pos.width,
-          height: pos.height,
+          x: pos.x * DPI,
+          y: pos.y * DPI,
+          width: pos.width * DPI,
+          height: pos.height * DPI,
         }))
         .filter((p) => p.imageUrl),
     }));

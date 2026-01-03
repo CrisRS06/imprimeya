@@ -1,32 +1,144 @@
 /**
- * Utilidad de impresión usando iframe aislado
- * Elimina problemas de spillover al aislar completamente los estilos de impresión
+ * Utilidad de impresión usando iframe
+ * Usa PIXELS en lugar de inches para compatibilidad con iOS Safari
+ * iOS interpreta inches con DPI diferente (72 vs 96)
  */
 
 export interface PrintPhotoData {
   imageUrl: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+  x: number;      // en pixels (ya convertido desde inches × 96)
+  y: number;      // en pixels
+  width: number;  // en pixels
+  height: number; // en pixels
 }
 
 export interface PrintPageData {
   photos: PrintPhotoData[];
 }
 
+// Constantes en pixels (Letter size @ 96 DPI)
+const SHEET_WIDTH_PX = 816;   // 8.5in × 96
+const SHEET_HEIGHT_PX = 1056; // 11in × 96
+
 /**
- * Imprime páginas usando un iframe aislado con HTML mínimo
- * @param pages - Array de páginas, cada una con sus fotos posicionadas
- * @param orderCode - Código del pedido para el título
- * @returns Promise que resuelve cuando se abre el diálogo de impresión
+ * Genera el HTML para impresión - TODO EN PIXELS
+ */
+function generatePrintHTML(pages: PrintPageData[], orderCode: string): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=${SHEET_WIDTH_PX}, initial-scale=1.0, shrink-to-fit=no">
+      <title>Pedido ${orderCode}</title>
+      <style>
+        /* Reset total */
+        *, *::before, *::after {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        @page {
+          size: letter;
+          margin: 0;
+        }
+
+        html {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+
+        body {
+          width: ${SHEET_WIDTH_PX}px;
+          margin: 0;
+          padding: 0;
+          background: white;
+        }
+
+        .sheet {
+          width: ${SHEET_WIDTH_PX}px;
+          height: ${SHEET_HEIGHT_PX}px;
+          position: relative;
+          overflow: hidden;
+          background: white;
+          page-break-after: always;
+          break-after: page;
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+
+        .sheet:last-child {
+          page-break-after: auto;
+          break-after: auto;
+        }
+
+        .photo {
+          position: absolute;
+          object-fit: cover;
+          max-width: none;
+        }
+
+        @media print {
+          html, body {
+            width: ${SHEET_WIDTH_PX}px;
+            height: auto;
+            overflow: hidden;
+          }
+
+          body > *:not(.sheet) {
+            display: none !important;
+          }
+        }
+
+        @media screen {
+          body {
+            background: #f0f0f0;
+            padding: 20px;
+          }
+          .sheet {
+            margin: 20px auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+          }
+        }
+      </style>
+    </head>
+    <body>
+      ${pages
+        .map(
+          (page) => `
+        <div class="sheet">
+          ${page.photos
+            .map(
+              (photo) => `
+            <img
+              class="photo"
+              src="${photo.imageUrl}"
+              crossorigin="anonymous"
+              style="left:${photo.x}px;top:${photo.y}px;width:${photo.width}px;height:${photo.height}px;"
+              onerror="this.style.display='none'"
+            />
+          `
+            )
+            .join("")}
+        </div>
+      `
+        )
+        .join("")}
+    </body>
+    </html>
+  `;
+}
+
+/**
+ * Imprime usando iframe aislado
+ * Funciona en todos los navegadores incluyendo iOS Safari
  */
 export function printWithIframe(
   pages: PrintPageData[],
   orderCode: string
 ): Promise<void> {
   return new Promise((resolve) => {
-    // Crear iframe oculto
     const iframe = document.createElement("iframe");
     iframe.style.position = "fixed";
     iframe.style.right = "0";
@@ -44,107 +156,16 @@ export function printWithIframe(
       return;
     }
 
-    // Generar HTML mínimo con estilos de impresión aislados
+    const html = generatePrintHTML(pages, orderCode);
     doc.open();
-    doc.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Pedido ${orderCode}</title>
-        <style>
-          @page {
-            size: letter;
-            margin: 0;
-          }
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          html, body {
-            width: 8.5in;
-            margin: 0;
-            padding: 0;
-          }
-          .sheet {
-            width: 8.5in;
-            height: 11in;
-            position: relative;
-            overflow: hidden;
-            page-break-after: always;
-            page-break-inside: avoid;
-          }
-          .sheet:last-child {
-            page-break-after: auto;
-          }
-          .photo {
-            position: absolute;
-            object-fit: cover;
-          }
-        </style>
-      </head>
-      <body>
-        ${pages
-          .map(
-            (page) => `
-          <div class="sheet">
-            ${page.photos
-              .map(
-                (photo) => `
-              <img
-                class="photo"
-                src="${photo.imageUrl}"
-                crossorigin="anonymous"
-                style="left:${photo.x}in;top:${photo.y}in;width:${photo.width}in;height:${photo.height}in;"
-              />
-            `
-              )
-              .join("")}
-          </div>
-        `
-          )
-          .join("")}
-      </body>
-      </html>
-    `);
+    doc.write(html);
     doc.close();
 
-    // Esperar a que todas las imágenes carguen antes de imprimir
     const images = doc.querySelectorAll("img");
-    const imageCount = images.length;
-
-    if (imageCount === 0) {
-      // Sin imágenes, imprimir directamente
-      triggerPrint();
-      return;
-    }
-
     let loadedCount = 0;
-    const onImageLoad = () => {
-      loadedCount++;
-      if (loadedCount >= imageCount) {
-        triggerPrint();
-      }
-    };
+    const totalImages = images.length;
 
-    images.forEach((img) => {
-      if (img.complete && img.naturalHeight !== 0) {
-        onImageLoad();
-      } else {
-        img.onload = onImageLoad;
-        img.onerror = onImageLoad; // Continuar incluso si falla una imagen
-      }
-    });
-
-    // Timeout de seguridad (10 segundos máximo de espera)
-    const timeoutId = setTimeout(() => {
-      triggerPrint();
-    }, 10000);
-
-    function triggerPrint() {
-      clearTimeout(timeoutId);
-
-      // Pequeño delay para asegurar renderizado
+    const triggerPrint = () => {
       setTimeout(() => {
         try {
           iframe.contentWindow?.focus();
@@ -152,13 +173,35 @@ export function printWithIframe(
         } catch (e) {
           console.error("Error al imprimir:", e);
         }
-
-        // Limpiar iframe después de un tiempo
         setTimeout(() => {
           iframe.remove();
           resolve();
         }, 2000);
       }, 100);
+    };
+
+    if (totalImages === 0) {
+      triggerPrint();
+      return;
     }
+
+    const onLoad = () => {
+      loadedCount++;
+      if (loadedCount >= totalImages) {
+        triggerPrint();
+      }
+    };
+
+    images.forEach((img) => {
+      if (img.complete && img.naturalHeight !== 0) {
+        onLoad();
+      } else {
+        img.onload = onLoad;
+        img.onerror = onLoad;
+      }
+    });
+
+    // Timeout de seguridad
+    setTimeout(triggerPrint, 10000);
   });
 }

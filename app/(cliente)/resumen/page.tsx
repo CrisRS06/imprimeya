@@ -65,6 +65,7 @@ function ResumenPageContent() {
   const [sheetsCount, setSheetsCount] = useState(1);
   const [totalQuantity, setTotalQuantity] = useState<number>(1);
   const [isColor, setIsColor] = useState<boolean>(true); // Para documentos
+  const [fillMode, setFillMode] = useState<"fill" | "fit">("fill"); // fill=cover, fit=contain
 
   // Load data from sessionStorage
   useEffect(() => {
@@ -107,6 +108,12 @@ function ResumenPageContent() {
     const colorSetting = sessionStorage.getItem("documentIsColor");
     if (colorSetting !== null) {
       setIsColor(colorSetting === "true");
+    }
+
+    // Fill mode (fill=cover, fit=contain)
+    const storedFillMode = sessionStorage.getItem("fillMode") as "fill" | "fit" | null;
+    if (storedFillMode) {
+      setFillMode(storedFillMode);
     }
   }, []);
 
@@ -167,6 +174,7 @@ function ResumenPageContent() {
             layoutId: selectedLayout?.id,
             totalPhotos: totalQuantity,
             photosWithQuantities: photos,
+            fillMode, // fill=cover, fit=contain
           },
         }),
       });

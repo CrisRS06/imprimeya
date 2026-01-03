@@ -22,10 +22,13 @@ interface PrintData {
     status: string;
     quantity: number;
     total: number;
+    subtotal: number;
+    pricePerUnit: number;
     productType: string;
     sizeName: string;
     paperType: string;
     paperDisplayName: string;
+    isColor: boolean;
   };
   print: {
     layoutId: string;
@@ -37,6 +40,7 @@ interface PrintData {
       quantity: number;
     }>;
     totalPhotos: number;
+    fillMode: "fill" | "fit";
   };
 }
 
@@ -67,11 +71,13 @@ function PrintSheet({
   photos,
   sheetNumber,
   totalSheets,
+  fillMode,
 }: {
   layout: PhotoLayout;
   photos: string[];
   sheetNumber: number;
   totalSheets: number;
+  fillMode: "fill" | "fit";
 }) {
   const { positions } = layout.layout_data;
 
@@ -116,7 +122,8 @@ function PrintSheet({
                 style={{
                   width: "100%",
                   height: "100%",
-                  objectFit: "cover",
+                  objectFit: fillMode === "fit" ? "contain" : "cover",
+                  backgroundColor: fillMode === "fit" ? "white" : undefined,
                 }}
               />
             ) : (
@@ -293,7 +300,7 @@ export default function PrintPage({
       </div>
 
       {/* Info del pedido y acciones - NO se imprime */}
-      <div className="no-print bg-gray-50 border-b pt-16 pb-4 px-4">
+      <div className="no-print bg-gray-50 border-b pt-20 pb-4 px-4">
         <div className="max-w-4xl mx-auto">
           {/* Detalles del pedido */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
@@ -320,10 +327,22 @@ export default function PrintPage({
           {/* Precio y boton de entregado */}
           <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-200">
             <div className="bg-emerald-50 rounded-xl px-6 py-3">
-              <p className="text-sm text-emerald-600 font-medium">Total a cobrar</p>
-              <p className="text-3xl font-bold text-emerald-700">
-                {formatPrice(data.order.total)}
-              </p>
+              <p className="text-sm text-emerald-600 font-medium mb-2">Desglose</p>
+              <div className="text-sm text-emerald-700 space-y-0.5">
+                <p>
+                  {sheetsNeeded} {sheetsNeeded === 1 ? "hoja" : "hojas"} × {formatPrice(data.order.pricePerUnit)} = {formatPrice(data.order.subtotal)}
+                </p>
+                {data.order.total > data.order.subtotal && (
+                  <p>
+                    + Papel {data.order.paperDisplayName}: {formatPrice(data.order.total - data.order.subtotal)}
+                  </p>
+                )}
+              </div>
+              <div className="border-t border-emerald-200 mt-2 pt-2">
+                <p className="text-2xl font-bold text-emerald-700">
+                  {formatPrice(data.order.total)}
+                </p>
+              </div>
             </div>
 
             {data.order.status === "pending" && (
@@ -360,6 +379,7 @@ export default function PrintPage({
             photos={sheetPhotos}
             sheetNumber={index}
             totalSheets={sheetsNeeded}
+            fillMode={data.print.fillMode}
           />
         ))}
       </div>

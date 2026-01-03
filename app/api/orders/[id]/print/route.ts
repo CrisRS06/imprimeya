@@ -64,6 +64,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const layoutId = designData.layoutId;
     const sizeName = designData.sizeName || order.print_sizes?.name;
     const photosWithQuantities = designData.photosWithQuantities || [];
+    const fillMode = designData.fillMode || "fill"; // "fill" = cover, "fit" = contain
 
     return NextResponse.json({
       success: true,
@@ -73,16 +74,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         status: order.status,
         quantity: order.quantity,
         total: order.total,
+        subtotal: order.subtotal,
+        pricePerUnit: order.price_per_unit,
         productType: order.product_type,
         sizeName,
         paperType: designData.paperType || order.paper_options?.type,
         paperDisplayName: order.paper_options?.display_name,
+        isColor: order.is_color !== false, // default true
       },
       print: {
         layoutId,
         imageUrls,
         photosWithQuantities,
         totalPhotos: designData.totalPhotos || 1,
+        fillMode,
       },
     });
   } catch (error) {

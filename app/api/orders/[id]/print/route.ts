@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { PRINT_COSTS, PAPER_SURCHARGES } from "@/lib/utils/price-calculator";
+import type { PaperType } from "@/lib/supabase/types";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -66,6 +68,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const photosWithQuantities = designData.photosWithQuantities || [];
     const fillMode = designData.fillMode || "fill"; // "fill" = cover, "fit" = contain
 
+    // Calcular desglose de precio
+    const isColor = order.is_color !== false; // default true
+    const printCost = isColor ? PRINT_COSTS.color : PRINT_COSTS.blackWhite;
+    const dbPaperType = (designData.dbPaperType || order.paper_options?.type || "bond_normal") as PaperType;
+    const paperSurcharge = PAPER_SURCHARGES[dbPaperType] || 0;
+    const pricePerUnit = printCost + paperSurcharge;
+
     return NextResponse.json({
       success: true,
       order: {
@@ -75,12 +84,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         quantity: order.quantity,
         total: order.total,
         subtotal: order.subtotal,
-        pricePerUnit: order.price_per_unit,
+        pricePerUnit,
+        printCost,
+        paperSurcharge,
         productType: order.product_type,
         sizeName,
         paperType: designData.paperType || order.paper_options?.type,
         paperDisplayName: order.paper_options?.display_name,
-        isColor: order.is_color !== false, // default true
+        isColor,
       },
       print: {
         layoutId,

@@ -24,6 +24,8 @@ interface PrintData {
     total: number;
     subtotal: number;
     pricePerUnit: number;
+    printCost: number;
+    paperSurcharge: number;
     productType: string;
     sizeName: string;
     paperType: string;
@@ -330,22 +332,25 @@ export default function PrintPage({
 
           {/* Precio y boton de entregado */}
           <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-200">
-            <div className="bg-emerald-50 rounded-xl px-6 py-3">
-              <p className="text-sm text-emerald-600 font-medium mb-2">Desglose</p>
-              <div className="text-sm text-emerald-700 space-y-0.5">
-                <p>
-                  {sheetsNeeded} {sheetsNeeded === 1 ? "hoja" : "hojas"} × {formatPrice(data.order.pricePerUnit)} = {formatPrice(data.order.subtotal)}
+            <div className="bg-emerald-50 rounded-xl px-6 py-4">
+              <p className="text-sm text-emerald-600 font-medium mb-2">Desglose ({sheetsNeeded} {sheetsNeeded === 1 ? "hoja" : "hojas"})</p>
+              <div className="text-sm text-emerald-700 space-y-1">
+                <p className="flex justify-between">
+                  <span>Impresion {data.order.isColor ? "color" : "B/N"}:</span>
+                  <span>{formatPrice(data.order.printCost * sheetsNeeded)}</span>
                 </p>
-                {data.order.total > data.order.subtotal && (
-                  <p>
-                    + Papel {data.order.paperDisplayName}: {formatPrice(data.order.total - data.order.subtotal)}
+                {data.order.paperSurcharge > 0 && (
+                  <p className="flex justify-between">
+                    <span>Papel {data.order.paperDisplayName}:</span>
+                    <span>{formatPrice(data.order.paperSurcharge * sheetsNeeded)}</span>
                   </p>
                 )}
               </div>
-              <div className="border-t border-emerald-200 mt-2 pt-2">
-                <p className="text-2xl font-bold text-emerald-700">
+              <div className="border-t border-emerald-300 mt-2 pt-2 flex justify-between items-center">
+                <span className="text-emerald-700 font-medium">Total:</span>
+                <span className="text-2xl font-bold text-emerald-700">
                   {formatPrice(data.order.total)}
-                </p>
+                </span>
               </div>
             </div>
 

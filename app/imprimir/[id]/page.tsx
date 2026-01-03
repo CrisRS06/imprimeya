@@ -337,7 +337,7 @@ export default function PrintPage({
           </div>
 
           {/* Otros detalles */}
-          <div className="grid grid-cols-3 gap-4 text-sm mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-sm mb-4">
             <div>
               <span className="text-gray-500">Tipo:</span>
               <span className="ml-2 font-medium">{data.order.productType}</span>
@@ -355,8 +355,8 @@ export default function PrintPage({
           </div>
 
           {/* Precio y boton de entregado */}
-          <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-200">
-            <div className="bg-emerald-50 rounded-xl px-6 py-4 min-w-[280px]">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-4 border-t border-gray-200">
+            <div className="bg-emerald-50 rounded-xl px-4 sm:px-6 py-4 w-full sm:w-auto sm:min-w-[280px]">
               <p className="text-sm text-emerald-600 font-medium mb-3">
                 Desglose ({sheetsNeeded} {sheetsNeeded === 1 ? "hoja" : "hojas"})
               </p>

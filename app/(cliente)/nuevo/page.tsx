@@ -314,7 +314,7 @@ export default function NuevoPage() {
           ) : (
             <div className="w-full">
               {/* Preview Grid */}
-              <div className="grid grid-cols-3 gap-2 mb-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
                 <AnimatePresence mode="popLayout">
                   {files.map((file) => (
                     <motion.div

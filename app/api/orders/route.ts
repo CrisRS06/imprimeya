@@ -24,6 +24,25 @@ const PAPER_TYPE_MAP: Record<string, string> = {
   lino: "lino",
 };
 
+// Valores válidos para productType
+const VALID_PRODUCT_TYPES = ["photo", "document", "single_photo", "collage", "poster"] as const;
+
+// Valores válidos para paper types (solo los que están en el mapa)
+const VALID_PAPER_TYPES = Object.keys(PAPER_TYPE_MAP);
+
+// Constantes de validación
+const MAX_QUANTITY = 100;
+const MIN_QUANTITY = 1;
+const MAX_LIMIT = 100;
+const MAX_NOTES_LENGTH = 500;
+
+// Función de validación segura de paper type
+function getValidPaperType(paperType: string): string | null {
+  if (!paperType || typeof paperType !== "string") return null;
+  const mapped = PAPER_TYPE_MAP[paperType];
+  return mapped || null; // No fallback to user input
+}
+
 interface CreateOrderBody {
   productType: ProductType;
   sizeName: string;
@@ -65,9 +84,63 @@ export async function POST(request: NextRequest) {
     const supabase = await createServiceClient();
 
     // Validar campos requeridos
-    if (!body.productType || !body.sizeName || !body.paperType || !body.quantity) {
+    if (!body.productType || !body.sizeName || !body.paperType || body.quantity === undefined) {
       return NextResponse.json(
-        { error: "Faltan campos requeridos" },
+        { error: "Faltan campos requeridos: productType, sizeName, paperType, quantity" },
+        { status: 400 }
+      );
+    }
+
+    // Validar productType
+    if (!VALID_PRODUCT_TYPES.includes(body.productType as typeof VALID_PRODUCT_TYPES[number])) {
+      return NextResponse.json(
+        { error: `Tipo de producto inválido: ${body.productType}. Válidos: ${VALID_PRODUCT_TYPES.join(", ")}` },
+        { status: 400 }
+      );
+    }
+
+    // Validar quantity (número entero positivo dentro del rango)
+    if (typeof body.quantity !== "number" || !Number.isInteger(body.quantity)) {
+      return NextResponse.json(
+        { error: "quantity debe ser un número entero" },
+        { status: 400 }
+      );
+    }
+    if (body.quantity < MIN_QUANTITY || body.quantity > MAX_QUANTITY) {
+      return NextResponse.json(
+        { error: `quantity debe estar entre ${MIN_QUANTITY} y ${MAX_QUANTITY}` },
+        { status: 400 }
+      );
+    }
+
+    // Validar paperType (debe estar en el mapa de tipos válidos)
+    if (!VALID_PAPER_TYPES.includes(body.paperType)) {
+      return NextResponse.json(
+        { error: `Tipo de papel inválido: ${body.paperType}. Válidos: ${VALID_PAPER_TYPES.join(", ")}` },
+        { status: 400 }
+      );
+    }
+
+    // Validar sizeName (string no vacío, máximo 20 caracteres)
+    if (typeof body.sizeName !== "string" || body.sizeName.length === 0 || body.sizeName.length > 20) {
+      return NextResponse.json(
+        { error: "sizeName debe ser un string de 1-20 caracteres" },
+        { status: 400 }
+      );
+    }
+
+    // Validar notes (opcional, máximo 500 caracteres)
+    if (body.notes && (typeof body.notes !== "string" || body.notes.length > MAX_NOTES_LENGTH)) {
+      return NextResponse.json(
+        { error: `notes debe ser un string de máximo ${MAX_NOTES_LENGTH} caracteres` },
+        { status: 400 }
+      );
+    }
+
+    // Validar originalImages (array de strings)
+    if (!Array.isArray(body.originalImages)) {
+      return NextResponse.json(
+        { error: "originalImages debe ser un array" },
         { status: 400 }
       );
     }
@@ -100,8 +173,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Mapear tipo de papel del frontend al valor de BD
-    const dbPaperType = PAPER_TYPE_MAP[body.paperType] || body.paperType;
+    // Mapear tipo de papel del frontend al valor de BD (ya validado arriba)
+    const dbPaperType = getValidPaperType(body.paperType);
+    if (!dbPaperType) {
+      return NextResponse.json(
+        { error: `Error interno: tipo de papel no mapeado: ${body.paperType}` },
+        { status: 500 }
+      );
+    }
 
     // Obtener ID de papel (requerido)
     const { data: paperOption } = await sb
@@ -226,16 +305,43 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
     const status = searchParams.get("status");
-    const limit = parseInt(searchParams.get("limit") || "50");
-    const offset = parseInt(searchParams.get("offset") || "0");
+
+    // Validar y sanitizar limit
+    let limit = parseInt(searchParams.get("limit") || "50");
+    if (isNaN(limit) || limit < 1) limit = 50;
+    if (limit > MAX_LIMIT) limit = MAX_LIMIT;
+
+    // Validar y sanitizar offset
+    let offset = parseInt(searchParams.get("offset") || "0");
+    if (isNaN(offset) || offset < 0) offset = 0;
+
+    // Validar status si se proporciona
+    const validStatuses = ["pending", "processing", "ready", "delivered", "cancelled"];
+    if (status && !validStatuses.includes(status)) {
+      return NextResponse.json(
+        { error: `Status inválido: ${status}. Válidos: ${validStatuses.join(", ")}` },
+        { status: 400 }
+      );
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = supabase as any;
 
+    // Select solo campos necesarios para listado (evita traer design_data JSONB pesado)
     let query = sb
       .from("orders")
       .select(`
-        *,
+        id,
+        code,
+        status,
+        product_type,
+        quantity,
+        subtotal,
+        total,
+        is_color,
+        notes,
+        created_at,
+        updated_at,
         print_sizes (name, width_inches, height_inches),
         paper_options (type, display_name)
       `)
@@ -261,10 +367,9 @@ export async function GET(request: NextRequest) {
       const isColor = order.is_color !== false; // default true
       const printCost = isColor ? PRINT_COSTS.color : PRINT_COSTS.blackWhite;
 
-      // Obtener tipo de papel desde design_data o paper_options
-      const designData = (order.design_data || {}) as Record<string, unknown>;
+      // Obtener tipo de papel desde paper_options (design_data no se trae en listado)
       const paperOptions = order.paper_options as { type?: string } | null;
-      const dbPaperType = (designData.dbPaperType || paperOptions?.type || "bond_normal") as PaperType;
+      const dbPaperType = (paperOptions?.type || "bond_normal") as PaperType;
       const paperSurcharge = PAPER_SURCHARGES[dbPaperType] || 0;
 
       return {

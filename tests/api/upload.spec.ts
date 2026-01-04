@@ -70,11 +70,22 @@ test.describe('API: /api/upload', () => {
   });
 
   test('DELETE /api/upload removes file', async ({ request }) => {
-    // Would need real uploaded file path
-    const response = await request.delete('/api/upload?path=test/path.jpg');
+    // Use valid UUID path format (will fail with 500 if no real file, but validates path format)
+    const validPath = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890/a1b2c3d4-e5f6-7890-abcd-ef1234567890.jpg';
+    const response = await request.delete(`/api/upload?path=${validPath}`);
 
-    // Will fail without real file
+    // Will fail without Supabase connection (500) or without real file
     expect([200, 404, 500]).toContain(response.status());
+  });
+
+  test('DELETE /api/upload rejects invalid path format', async ({ request }) => {
+    // Path traversal attempt - should be rejected
+    const response = await request.delete('/api/upload?path=../../../etc/passwd');
+
+    // Should return 400 for invalid path
+    expect(response.status()).toBe(400);
+    const json = await response.json();
+    expect(json.error).toContain('inválido');
   });
 });
 

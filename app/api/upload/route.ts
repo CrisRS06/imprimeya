@@ -98,6 +98,26 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Función para validar path de archivo
+// Previene path traversal y asegura formato correcto
+function isValidFilePath(path: string): boolean {
+  // No debe estar vacío
+  if (!path || typeof path !== "string") return false;
+
+  // No debe contener path traversal
+  if (path.includes("..") || path.includes("//")) return false;
+
+  // No debe empezar con / o contener caracteres peligrosos
+  if (path.startsWith("/") || path.includes("\\")) return false;
+
+  // Debe coincidir con formato esperado: sessionId/fileId.ext
+  // sessionId es UUID, fileId es UUID, ext es 3-4 caracteres
+  const pathRegex = /^[a-f0-9-]{36}\/[a-f0-9-]{36}\.[a-z]{2,4}$/i;
+  if (!pathRegex.test(path)) return false;
+
+  return true;
+}
+
 // Endpoint para eliminar archivo
 export async function DELETE(request: NextRequest) {
   try {
@@ -107,6 +127,15 @@ export async function DELETE(request: NextRequest) {
     if (!path) {
       return NextResponse.json(
         { error: "Path no proporcionado" },
+        { status: 400 }
+      );
+    }
+
+    // Validar path para prevenir path traversal
+    if (!isValidFilePath(path)) {
+      console.warn(`Intento de eliminación con path inválido: ${path}`);
+      return NextResponse.json(
+        { error: "Path de archivo inválido" },
         { status: 400 }
       );
     }

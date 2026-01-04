@@ -2,11 +2,9 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import {
   ArrowLeftIcon,
   ChevronRightIcon,
-  CheckCircleIcon,
   FileIcon,
   PrinterIcon,
 } from "lucide-react";
@@ -17,7 +15,7 @@ import { PaperSelector } from "@/components/fotos/PaperSelector";
 import { LayoutPreviewCompact } from "@/components/fotos/LayoutPreview";
 import type { PaperType, PhotoLayout } from "@/lib/supabase/types";
 import { getLayoutById, calculateSheetsNeeded } from "@/lib/config/photo-layouts";
-import { PAPERS, getRecommendedPaper } from "@/lib/config/papers";
+import { getRecommendedPaper } from "@/lib/config/papers";
 import type { PhotoWithQuantity } from "@/lib/types/photos";
 
 export default function FotosPapelPage() {

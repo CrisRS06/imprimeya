@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { v4 as uuidv4 } from "uuid";
+import { checkRateLimit, getClientId, RATE_LIMITS } from "@/lib/utils/rate-limiter";
+import { log, generateRequestId } from "@/lib/logger";
 
 // Tamano maximo permitido (10MB)
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -15,7 +17,26 @@ const ALLOWED_TYPES = [
 ];
 
 export async function POST(request: NextRequest) {
+  const requestId = generateRequestId();
+
   try {
+    // Rate limiting
+    const clientId = getClientId(request.headers);
+    const rateCheck = checkRateLimit(`upload:${clientId}`, RATE_LIMITS.upload);
+
+    if (!rateCheck.success) {
+      log.warn("Rate limit exceeded for upload", { clientId, requestId });
+      return NextResponse.json(
+        { error: "Demasiadas subidas. Espera un momento." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil((rateCheck.resetTime - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const sessionId = formData.get("sessionId") as string | null;
@@ -65,12 +86,14 @@ export async function POST(request: NextRequest) {
       });
 
     if (error) {
-      console.error("Error uploading to Supabase:", error);
+      log.error("Failed to upload to Supabase", error, { fileName, requestId });
       return NextResponse.json(
         { error: "Error al subir archivo" },
         { status: 500 }
       );
     }
+
+    log.info("File uploaded successfully", { path: data.path, size: file.size, requestId });
 
     // Obtener URL publica
     const { data: urlData } = supabase.storage
@@ -90,7 +113,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Upload error:", error);
+    log.error("Unhandled upload error", error, { requestId });
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -133,7 +156,7 @@ export async function DELETE(request: NextRequest) {
 
     // Validar path para prevenir path traversal
     if (!isValidFilePath(path)) {
-      console.warn(`Intento de eliminación con path inválido: ${path}`);
+      log.warn("Invalid file path deletion attempt", { path });
       return NextResponse.json(
         { error: "Path de archivo inválido" },
         { status: 400 }
@@ -153,7 +176,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Delete error:", error);
+    log.error("Unhandled delete error", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }

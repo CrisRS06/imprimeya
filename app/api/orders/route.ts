@@ -7,6 +7,9 @@ import {
   PRINT_COSTS,
   PAPER_SURCHARGES,
 } from "@/lib/utils/price-calculator";
+import { checkRateLimit, getClientId, RATE_LIMITS } from "@/lib/utils/rate-limiter";
+import { log, generateRequestId } from "@/lib/logger";
+import { CreateOrderSchema, ListOrdersQuerySchema } from "@/lib/validations/orders";
 
 // Mapeo de tipos de papel del frontend a valores del enum en BD
 // Frontend usa nombres descriptivos, BD usa enum legacy
@@ -79,71 +82,44 @@ interface OrderResult {
 
 // POST /api/orders - Crear nuevo pedido
 export async function POST(request: NextRequest) {
+  const requestId = generateRequestId();
+
   try {
-    const body: CreateOrderBody = await request.json();
+    // Rate limiting
+    const clientId = getClientId(request.headers);
+    const rateCheck = checkRateLimit(`orders:${clientId}`, RATE_LIMITS.orders);
+
+    if (!rateCheck.success) {
+      log.warn("Rate limit exceeded for orders", { clientId, requestId });
+      return NextResponse.json(
+        { error: "Demasiadas solicitudes. Intenta de nuevo en un momento." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil((rateCheck.resetTime - Date.now()) / 1000).toString(),
+            "X-RateLimit-Remaining": "0",
+          },
+        }
+      );
+    }
+
+    const rawBody = await request.json();
+
+    // Validación con Zod
+    const parseResult = CreateOrderSchema.safeParse(rawBody);
+    if (!parseResult.success) {
+      const errors = parseResult.error.issues.map((e) => `${e.path.join(".")}: ${e.message}`);
+      log.warn("Order validation failed", { errors, requestId });
+      return NextResponse.json(
+        { error: "Datos inválidos", details: errors },
+        { status: 400 }
+      );
+    }
+
+    const body = parseResult.data;
     const supabase = await createServiceClient();
 
-    // Validar campos requeridos
-    if (!body.productType || !body.sizeName || !body.paperType || body.quantity === undefined) {
-      return NextResponse.json(
-        { error: "Faltan campos requeridos: productType, sizeName, paperType, quantity" },
-        { status: 400 }
-      );
-    }
-
-    // Validar productType
-    if (!VALID_PRODUCT_TYPES.includes(body.productType as typeof VALID_PRODUCT_TYPES[number])) {
-      return NextResponse.json(
-        { error: `Tipo de producto inválido: ${body.productType}. Válidos: ${VALID_PRODUCT_TYPES.join(", ")}` },
-        { status: 400 }
-      );
-    }
-
-    // Validar quantity (número entero positivo dentro del rango)
-    if (typeof body.quantity !== "number" || !Number.isInteger(body.quantity)) {
-      return NextResponse.json(
-        { error: "quantity debe ser un número entero" },
-        { status: 400 }
-      );
-    }
-    if (body.quantity < MIN_QUANTITY || body.quantity > MAX_QUANTITY) {
-      return NextResponse.json(
-        { error: `quantity debe estar entre ${MIN_QUANTITY} y ${MAX_QUANTITY}` },
-        { status: 400 }
-      );
-    }
-
-    // Validar paperType (debe estar en el mapa de tipos válidos)
-    if (!VALID_PAPER_TYPES.includes(body.paperType)) {
-      return NextResponse.json(
-        { error: `Tipo de papel inválido: ${body.paperType}. Válidos: ${VALID_PAPER_TYPES.join(", ")}` },
-        { status: 400 }
-      );
-    }
-
-    // Validar sizeName (string no vacío, máximo 20 caracteres)
-    if (typeof body.sizeName !== "string" || body.sizeName.length === 0 || body.sizeName.length > 20) {
-      return NextResponse.json(
-        { error: "sizeName debe ser un string de 1-20 caracteres" },
-        { status: 400 }
-      );
-    }
-
-    // Validar notes (opcional, máximo 500 caracteres)
-    if (body.notes && (typeof body.notes !== "string" || body.notes.length > MAX_NOTES_LENGTH)) {
-      return NextResponse.json(
-        { error: `notes debe ser un string de máximo ${MAX_NOTES_LENGTH} caracteres` },
-        { status: 400 }
-      );
-    }
-
-    // Validar originalImages (array de strings)
-    if (!Array.isArray(body.originalImages)) {
-      return NextResponse.json(
-        { error: "originalImages debe ser un array" },
-        { status: 400 }
-      );
-    }
+    log.info("Creating order", { productType: body.productType, quantity: body.quantity, requestId });
 
     // Generar codigo unico
     let code = generateOrderCode();
@@ -190,7 +166,7 @@ export async function POST(request: NextRequest) {
       .single() as { data: PaperOptionResult | null };
 
     if (!paperOption) {
-      console.error(`Papel no encontrado: ${body.paperType} -> ${dbPaperType}`);
+      log.error("Paper option not found", undefined, { paperType: body.paperType, dbPaperType, requestId });
       return NextResponse.json(
         { error: `Tipo de papel invalido: ${body.paperType}` },
         { status: 400 }
@@ -260,12 +236,14 @@ export async function POST(request: NextRequest) {
       .single() as { data: OrderResult | null; error: Error | null };
 
     if (error || !order) {
-      console.error("Error creating order:", error);
+      log.error("Failed to create order", error, { requestId });
       return NextResponse.json(
         { error: "Error creando pedido" },
         { status: 500 }
       );
     }
+
+    log.info("Order created successfully", { orderId: order.id, code: order.code, requestId });
 
     // Disparar evento para generar PDF en background
     try {
@@ -275,8 +253,9 @@ export async function POST(request: NextRequest) {
           orderId: order.id,
         },
       });
+      log.debug("Inngest event sent", { orderId: order.id, requestId });
     } catch (inngestError) {
-      console.error("Error sending Inngest event:", inngestError);
+      log.error("Failed to send Inngest event", inngestError, { orderId: order.id, requestId });
       // No fallar el request por esto, el PDF se puede generar manualmente
     }
 
@@ -290,7 +269,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error in POST /api/orders:", error);
+    log.error("Unhandled error in POST /api/orders", error, { requestId });
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -300,29 +279,40 @@ export async function POST(request: NextRequest) {
 
 // GET /api/orders - Listar pedidos (para staff)
 export async function GET(request: NextRequest) {
+  const requestId = generateRequestId();
+
   try {
+    // Rate limiting for GET (more lenient)
+    const clientId = getClientId(request.headers);
+    const rateCheck = checkRateLimit(`orders:get:${clientId}`, RATE_LIMITS.api);
+
+    if (!rateCheck.success) {
+      log.warn("Rate limit exceeded for orders list", { clientId, requestId });
+      return NextResponse.json(
+        { error: "Demasiadas solicitudes" },
+        { status: 429 }
+      );
+    }
+
     const supabase = await createServiceClient();
     const { searchParams } = new URL(request.url);
 
-    const status = searchParams.get("status");
+    // Validación con Zod
+    const queryParams = {
+      status: searchParams.get("status") || undefined,
+      limit: searchParams.get("limit") || undefined,
+      offset: searchParams.get("offset") || undefined,
+    };
 
-    // Validar y sanitizar limit
-    let limit = parseInt(searchParams.get("limit") || "50");
-    if (isNaN(limit) || limit < 1) limit = 50;
-    if (limit > MAX_LIMIT) limit = MAX_LIMIT;
-
-    // Validar y sanitizar offset
-    let offset = parseInt(searchParams.get("offset") || "0");
-    if (isNaN(offset) || offset < 0) offset = 0;
-
-    // Validar status si se proporciona
-    const validStatuses = ["pending", "processing", "ready", "delivered", "cancelled"];
-    if (status && !validStatuses.includes(status)) {
+    const parseResult = ListOrdersQuerySchema.safeParse(queryParams);
+    if (!parseResult.success) {
       return NextResponse.json(
-        { error: `Status inválido: ${status}. Válidos: ${validStatuses.join(", ")}` },
+        { error: "Parámetros inválidos" },
         { status: 400 }
       );
     }
+
+    const { status, limit, offset } = parseResult.data;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = supabase as any;
@@ -355,7 +345,7 @@ export async function GET(request: NextRequest) {
     const { data: orders, error, count } = await query;
 
     if (error) {
-      console.error("Error fetching orders:", error);
+      log.error("Failed to fetch orders", error, { requestId });
       return NextResponse.json(
         { error: "Error obteniendo pedidos" },
         { status: 500 }
@@ -387,7 +377,7 @@ export async function GET(request: NextRequest) {
       offset,
     });
   } catch (error) {
-    console.error("Error in GET /api/orders:", error);
+    log.error("Unhandled error in GET /api/orders", error, { requestId });
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }

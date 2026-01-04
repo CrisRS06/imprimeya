@@ -5,10 +5,8 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
-  ImageIcon,
   UploadIcon,
   XIcon,
-  CheckIcon,
   AlertCircleIcon,
   ArrowRightIcon,
   ArrowLeftIcon,

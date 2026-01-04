@@ -1,17 +1,42 @@
 import { test, expect } from '@playwright/test';
 
+/**
+ * Staff Dashboard Tests
+ *
+ * Note: These tests require a valid staff user in Supabase.
+ * In CI/CD, either:
+ * 1. Set up test users via STAFF_TEST_EMAIL and STAFF_TEST_PASSWORD env vars
+ * 2. Skip these tests with test.skip()
+ * 3. Use Supabase test project
+ */
+
+// Check if test credentials are available
+const STAFF_EMAIL = process.env.STAFF_TEST_EMAIL;
+const STAFF_PASSWORD = process.env.STAFF_TEST_PASSWORD;
+const hasTestCredentials = STAFF_EMAIL && STAFF_PASSWORD;
+
 // Helper to login to staff dashboard
 async function staffLogin(page: import('@playwright/test').Page) {
-  await page.goto('/dashboard');
-  // Enter PIN
-  await page.getByRole('textbox').fill('1234');
-  await page.getByRole('button', { name: /entrar/i }).click();
+  if (!hasTestCredentials) {
+    throw new Error('Test credentials not configured. Set STAFF_TEST_EMAIL and STAFF_TEST_PASSWORD.');
+  }
+
+  await page.goto('/staff/login');
+
+  // Fill login form
+  await page.getByLabel(/correo/i).fill(STAFF_EMAIL!);
+  await page.getByLabel(/contrasena/i).fill(STAFF_PASSWORD!);
+  await page.getByRole('button', { name: /iniciar sesion/i }).click();
+
   // Wait for dashboard to load
-  await page.waitForURL('/dashboard');
+  await page.waitForURL('/dashboard', { timeout: 15000 });
   await expect(page.getByText(/pendientes/i).first()).toBeVisible({ timeout: 10000 });
 }
 
 test.describe('Staff Dashboard', () => {
+  // Skip all tests in this describe block if no credentials
+  test.skip(!hasTestCredentials, 'Skipping: No test credentials configured');
+
   test.beforeEach(async ({ page }) => {
     await staffLogin(page);
   });
@@ -74,6 +99,8 @@ test.describe('Staff Dashboard', () => {
 });
 
 test.describe('Staff Dashboard - Auto Refresh', () => {
+  test.skip(!hasTestCredentials, 'Skipping: No test credentials configured');
+
   test('dashboard auto-refreshes', async ({ page }) => {
     await staffLogin(page);
 
@@ -113,6 +140,8 @@ test.describe('Staff Dashboard - Auto Refresh', () => {
 });
 
 test.describe('Staff Dashboard - Responsive', () => {
+  test.skip(!hasTestCredentials, 'Skipping: No test credentials configured');
+
   test('mobile layout works', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await staffLogin(page);
@@ -128,5 +157,33 @@ test.describe('Staff Dashboard - Responsive', () => {
 
     // Should display properly
     await expect(page.getByText(/pendientes/i).first()).toBeVisible();
+  });
+});
+
+test.describe('Staff Logout', () => {
+  test.skip(!hasTestCredentials, 'Skipping: No test credentials configured');
+
+  test('logout redirects to home', async ({ page }) => {
+    await staffLogin(page);
+
+    // Click logout button
+    await page.getByRole('button', { name: /salir/i }).click();
+
+    // Should redirect to home
+    await expect(page).toHaveURL('/');
+  });
+
+  test('after logout, dashboard requires login again', async ({ page }) => {
+    await staffLogin(page);
+
+    // Logout
+    await page.getByRole('button', { name: /salir/i }).click();
+    await page.waitForURL('/');
+
+    // Try to access dashboard
+    await page.goto('/dashboard');
+
+    // Should redirect to login
+    await expect(page).toHaveURL(/\/staff\/login/);
   });
 });

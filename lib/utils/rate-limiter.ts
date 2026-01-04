@@ -1,6 +1,6 @@
 /**
- * Simple in-memory rate limiter for API routes
- * For production with multiple instances, consider using Redis-based solution
+ * In-memory rate limiter for API routes
+ * Simple sliding window implementation without external dependencies
  */
 
 interface RateLimitEntry {

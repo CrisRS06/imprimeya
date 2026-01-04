@@ -2,55 +2,53 @@
 
 import { useState, useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { LockIcon, LogOutIcon } from "lucide-react";
+import { LogOutIcon, UserIcon } from "lucide-react";
+import type { User } from "@supabase/supabase-js";
 
 interface StaffLayoutProps {
   children: ReactNode;
 }
 
-// PIN simple para acceso al dashboard (en produccion usar Supabase Auth)
-const STAFF_PIN = "1234";
-const AUTH_KEY = "imprimeya_staff_auth";
-
 export default function StaffLayout({ children }: StaffLayoutProps) {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [pin, setPin] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Verificar auth al montar
+  // Check auth on mount
   useEffect(() => {
-    const saved = sessionStorage.getItem(AUTH_KEY);
-    if (saved === "true") {
-      setIsAuthenticated(true);
-    } else {
-      setIsAuthenticated(false);
-    }
-  }, []);
+    const supabase = createClient();
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
+    // Get initial session
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      setLoading(false);
+    });
 
-    if (pin === STAFF_PIN) {
-      sessionStorage.setItem(AUTH_KEY, "true");
-      setIsAuthenticated(true);
-      setError(null);
-    } else {
-      setError("PIN incorrecto");
-      setPin("");
-    }
-  };
+    // Subscribe to auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (!session?.user) {
+        router.push("/staff/login");
+      }
+    });
 
-  const handleLogout = () => {
-    sessionStorage.removeItem(AUTH_KEY);
-    setIsAuthenticated(false);
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [router]);
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
     router.push("/");
   };
 
-  // Loading
-  if (isAuthenticated === null) {
+  // Loading state
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -58,63 +56,18 @@ export default function StaffLayout({ children }: StaffLayoutProps) {
     );
   }
 
-  // Login form
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
-        <div className="w-full max-w-sm">
-          {/* Login Card */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-8">
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 mx-auto bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
-                <LockIcon className="w-8 h-8 text-primary" />
-              </div>
-              <h1 className="text-2xl font-bold text-black">Acceso Staff</h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Ingresa el PIN para acceder
-              </p>
-            </div>
-
-            <form onSubmit={handleLogin} className="space-y-6">
-              <div>
-                <Input
-                  type="password"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={4}
-                  value={pin}
-                  onChange={(e) => {
-                    setPin(e.target.value);
-                    if (error) setError(null);
-                  }}
-                  placeholder="****"
-                  className="text-center text-2xl tracking-[0.5em] h-14 rounded-xl border-gray-200 focus:border-primary focus:ring-primary"
-                  autoFocus
-                />
-                {error && (
-                  <p className="text-sm text-destructive text-center mt-2">{error}</p>
-                )}
-              </div>
-              <Button
-                type="submit"
-                className="w-full h-12 rounded-xl"
-                disabled={pin.length < 4}
-              >
-                Entrar
-              </Button>
-            </form>
-          </div>
-
-          {/* Footer */}
-          <p className="text-center text-xs text-gray-400 mt-6">
-            ImprimeYA por Simple!
-          </p>
-        </div>
-      </div>
-    );
+  // Not authenticated - middleware should redirect, but handle edge case
+  if (!user) {
+    return null;
   }
 
-  // Authenticated layout
+  // Get display name from metadata or email
+  const displayName =
+    user.user_metadata?.name ||
+    user.user_metadata?.full_name ||
+    user.email?.split("@")[0] ||
+    "Staff";
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -128,15 +81,25 @@ export default function StaffLayout({ children }: StaffLayoutProps) {
               Staff
             </span>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLogout}
-            className="text-gray-500 hover:text-black"
-          >
-            <LogOutIcon className="w-4 h-4 mr-2" />
-            Salir
-          </Button>
+
+          <div className="flex items-center gap-4">
+            {/* User info */}
+            <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600">
+              <UserIcon className="w-4 h-4" />
+              <span>{displayName}</span>
+            </div>
+
+            {/* Logout */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-gray-500 hover:text-black"
+            >
+              <LogOutIcon className="w-4 h-4 mr-2" />
+              Salir
+            </Button>
+          </div>
         </div>
       </header>
 

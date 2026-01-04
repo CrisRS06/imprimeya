@@ -2,6 +2,7 @@ import { inngest } from "./client";
 import { generatePrintReadyPDF } from "@/lib/pdf/generator";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { log } from "@/lib/logger";
 
 // Cliente sin tipos estrictos para operaciones async
 async function getSupabaseAdmin() {
@@ -28,10 +29,27 @@ export const generateOrderPDF = inngest.createFunction(
   {
     id: "generate-order-pdf",
     retries: 3,
+    // Timeout de 5 minutos para generacion de PDF
+    timeouts: {
+      start: "30s", // Debe iniciar en 30s
+      finish: "5m", // Debe terminar en 5m
+    },
+    // Limite de concurrencia para no sobrecargar
+    concurrency: {
+      limit: 5,
+      key: "event.data.orderId",
+    },
+    onFailure: async ({ error, event }) => {
+      const eventData = event.data as { orderId?: string };
+      log.error("Inngest function failed: generate-order-pdf", error, {
+        orderId: eventData?.orderId,
+      });
+    },
   },
   { event: "order/created" },
   async ({ event, step }) => {
     const { orderId } = event.data;
+    log.info("Starting PDF generation", { orderId });
 
     // Step 1: Obtener datos del pedido
     const order = await step.run("fetch-order", async () => {
@@ -46,7 +64,10 @@ export const generateOrderPDF = inngest.createFunction(
         .eq("id", orderId)
         .single();
 
-      if (error) throw new Error(`Error obteniendo pedido: ${error.message}`);
+      if (error) {
+        log.error("Error fetching order for PDF", error, { orderId });
+        throw new Error(`Error obteniendo pedido: ${error.message}`);
+      }
       return data;
     });
 
@@ -60,6 +81,7 @@ export const generateOrderPDF = inngest.createFunction(
           processing_started_at: new Date().toISOString(),
         } as Record<string, unknown>)
         .eq("id", orderId);
+      log.debug("Order status updated to processing", { orderId });
     });
 
     // Step 3: Descargar imagen, generar PDF y subirlo
@@ -68,24 +90,31 @@ export const generateOrderPDF = inngest.createFunction(
       const supabase = await getSupabaseAdmin();
 
       if (!order.processed_image_path) {
+        log.warn("No processed image for order, skipping PDF", { orderId });
         throw new Error("No hay imagen procesada");
       }
 
       // Descargar imagen
+      log.debug("Downloading processed image", { orderId, path: order.processed_image_path });
       const { data: imageData, error: downloadError } = await supabase.storage
         .from("processed")
         .download(order.processed_image_path);
 
-      if (downloadError) throw new Error(`Error descargando imagen: ${downloadError.message}`);
+      if (downloadError) {
+        log.error("Error downloading image", downloadError, { orderId });
+        throw new Error(`Error descargando imagen: ${downloadError.message}`);
+      }
 
       const arrayBuffer = await imageData.arrayBuffer();
       const imageBuffer = Buffer.from(arrayBuffer);
 
       // Generar PDF
+      log.debug("Generating PDF", { orderId });
       const pdfBuffer = await generatePrintReadyPDF(imageBuffer, order);
 
       // Subir PDF
       const fileName = `${order.code}-${Date.now()}.pdf`;
+      log.debug("Uploading PDF", { orderId, fileName });
       const { error: uploadError } = await supabase.storage
         .from("pdfs")
         .upload(fileName, pdfBuffer, {
@@ -93,12 +122,15 @@ export const generateOrderPDF = inngest.createFunction(
           upsert: false,
         });
 
-      if (uploadError) throw new Error(`Error subiendo PDF: ${uploadError.message}`);
+      if (uploadError) {
+        log.error("Error uploading PDF", uploadError, { orderId, fileName });
+        throw new Error(`Error subiendo PDF: ${uploadError.message}`);
+      }
 
       return fileName;
     });
 
-    // Step 6: Actualizar pedido con path del PDF y estado 'ready'
+    // Step 4: Actualizar pedido con path del PDF y estado 'ready'
     await step.run("update-order-ready", async () => {
       const supabase = await getSupabaseAdmin();
       await supabase
@@ -109,6 +141,7 @@ export const generateOrderPDF = inngest.createFunction(
           ready_at: new Date().toISOString(),
         } as Record<string, unknown>)
         .eq("id", orderId);
+      log.info("Order PDF ready", { orderId, pdfPath });
     });
 
     return {
@@ -126,13 +159,26 @@ export const generateOrderPDF = inngest.createFunction(
 export const cleanupOldFiles = inngest.createFunction(
   {
     id: "cleanup-old-files",
+    // Timeout de 10 minutos para limpieza
+    timeouts: {
+      start: "1m",
+      finish: "10m",
+    },
+    // Solo una ejecucion a la vez
+    concurrency: {
+      limit: 1,
+    },
+    onFailure: async ({ error }) => {
+      log.error("Inngest function failed: cleanup-old-files", error);
+    },
   },
   { cron: "0 3 * * *" }, // Todos los dias a las 3 AM
   async ({ step }) => {
     const olderThanDays = 30;
+    log.info("Starting cleanup job", { olderThanDays });
 
     // Limpiar imagenes originales
-    await step.run("cleanup-originals", async () => {
+    const originalsResult = await step.run("cleanup-originals", async () => {
       const supabase = await getSupabaseAdmin();
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
@@ -154,11 +200,12 @@ export const cleanupOldFiles = inngest.createFunction(
         }
       }
 
+      log.info("Cleaned up original images", { deleted: deletedCount });
       return { deleted: deletedCount };
     });
 
     // Limpiar imagenes procesadas
-    await step.run("cleanup-processed", async () => {
+    const processedResult = await step.run("cleanup-processed", async () => {
       const supabase = await getSupabaseAdmin();
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
@@ -180,7 +227,13 @@ export const cleanupOldFiles = inngest.createFunction(
         await supabase.storage.from("processed").remove(paths);
       }
 
+      log.info("Cleaned up processed images", { deleted: paths.length });
       return { deleted: paths.length };
+    });
+
+    log.info("Cleanup job completed", {
+      originalsDeleted: originalsResult.deleted,
+      processedDeleted: processedResult.deleted,
     });
 
     return { success: true };

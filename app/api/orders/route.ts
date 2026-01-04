@@ -10,6 +10,13 @@ import {
 import { checkRateLimit, getClientId, RATE_LIMITS } from "@/lib/utils/rate-limiter";
 import { log, generateRequestId } from "@/lib/logger";
 import { CreateOrderSchema, ListOrdersQuerySchema } from "@/lib/validations/orders";
+import {
+  getIdempotencyKeyFromHeader,
+  getIdempotentResponse,
+  setIdempotentResponse,
+  generateIdempotencyKey,
+} from "@/lib/utils/idempotency";
+import { getStaffUser } from "@/lib/auth/staff-check";
 
 // Mapeo de tipos de papel del frontend a valores del enum en BD
 // Frontend usa nombres descriptivos, BD usa enum legacy
@@ -104,6 +111,23 @@ export async function POST(request: NextRequest) {
     }
 
     const rawBody = await request.json();
+
+    // Check for idempotency key (header or auto-generated)
+    let idempotencyKey = getIdempotencyKeyFromHeader(request.headers);
+    if (!idempotencyKey) {
+      // Auto-generate based on client + body hash
+      idempotencyKey = generateIdempotencyKey(clientId, rawBody);
+    }
+
+    // Check if we've already processed this request
+    const cachedResponse = getIdempotentResponse(idempotencyKey);
+    if (cachedResponse) {
+      log.info("Returning cached idempotent response", { idempotencyKey, requestId });
+      return NextResponse.json(cachedResponse.response, {
+        status: cachedResponse.status,
+        headers: { "X-Idempotent-Replayed": "true" },
+      });
+    }
 
     // Validación con Zod
     const parseResult = CreateOrderSchema.safeParse(rawBody);
@@ -259,7 +283,7 @@ export async function POST(request: NextRequest) {
       // No fallar el request por esto, el PDF se puede generar manualmente
     }
 
-    return NextResponse.json({
+    const successResponse = {
       success: true,
       order: {
         id: order.id,
@@ -267,7 +291,12 @@ export async function POST(request: NextRequest) {
         status: order.status,
         total: order.total,
       },
-    });
+    };
+
+    // Cache successful response for idempotency
+    setIdempotentResponse(idempotencyKey, successResponse, 200);
+
+    return NextResponse.json(successResponse);
   } catch (error) {
     log.error("Unhandled error in POST /api/orders", error, { requestId });
     return NextResponse.json(

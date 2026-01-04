@@ -67,6 +67,8 @@ const nextConfig: NextConfig = {
               "font-src 'self' data:",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.inngest.com",
               "worker-src 'self' blob:", // For service worker and web workers
+              "media-src 'self' blob:", // For audio/video elements
+              "manifest-src 'self'", // For PWA manifest
               "frame-src 'none'",
               "object-src 'none'",
               "base-uri 'self'",

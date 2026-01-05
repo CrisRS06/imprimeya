@@ -46,48 +46,49 @@ export interface PhotoSizeInfo {
   maxPerSheet: number
 }
 
+// Ordenados de mayor a menor tamaño
 export const PHOTO_SIZES: Record<PhotoSizeType, PhotoSizeInfo> = {
-  '4x6': {
-    name: '4x6',
-    displayName: '4x6 pulgadas',
-    width: 4,
-    height: 6,
-    maxPerSheet: 2,
+  'full': {
+    name: 'full',
+    displayName: 'Hoja Completa',
+    width: 8,
+    height: 10.5,
+    maxPerSheet: 1,
   },
   '5x7': {
     name: '5x7',
-    displayName: '5x7 pulgadas',
+    displayName: '5x7',
     width: 5,
     height: 7,
     maxPerSheet: 1,
   },
+  '4x6': {
+    name: '4x6',
+    displayName: '4x6',
+    width: 4,
+    height: 6,
+    maxPerSheet: 2,
+  },
   '3x5': {
     name: '3x5',
-    displayName: '3x5 pulgadas',
+    displayName: '3x5',
     width: 3,
     height: 5,
     maxPerSheet: 4,
   },
   'wallet': {
     name: 'wallet',
-    displayName: 'Wallet (2x3)',
+    displayName: 'Wallet',
     width: 2,
     height: 3,
     maxPerSheet: 12,
   },
   'carnet': {
     name: 'carnet',
-    displayName: 'Carnet (1.5x2)',
+    displayName: 'Carnet',
     width: 1.5,
     height: 2,
     maxPerSheet: 16,
-  },
-  'full': {
-    name: 'full',
-    displayName: 'Hoja Completa (8x10.5)',
-    width: 8,
-    height: 10.5,
-    maxPerSheet: 1,
   },
 }
 

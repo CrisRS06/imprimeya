@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckIcon, ExpandIcon, ShrinkIcon, MinusIcon, PlusIcon, ImageIcon, ChevronRightIcon } from "lucide-react";
+import { CheckIcon, ExpandIcon, ShrinkIcon, MinusIcon, PlusIcon, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   PHOTO_SIZES,
@@ -119,29 +119,6 @@ export function LayoutSelector({
 }: LayoutSelectorProps) {
   const [selectedSize, setSelectedSize] = useState<PhotoSizeType>("4x6");
   const [fillMode, setFillMode] = useState<FillMode>("fill");
-  const [showScrollHint, setShowScrollHint] = useState(true);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  // Detectar si hay mas contenido para scroll
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    const checkScroll = () => {
-      const hasMoreContent = container.scrollWidth > container.clientWidth;
-      const isScrolledToEnd = container.scrollLeft + container.clientWidth >= container.scrollWidth - 10;
-      setShowScrollHint(hasMoreContent && !isScrolledToEnd);
-    };
-
-    checkScroll();
-    container.addEventListener("scroll", checkScroll);
-    window.addEventListener("resize", checkScroll);
-
-    return () => {
-      container.removeEventListener("scroll", checkScroll);
-      window.removeEventListener("resize", checkScroll);
-    };
-  }, []);
 
   // Para el modo de 1 sola foto, usamos quantity local
   const [singlePhotoQuantity, setSinglePhotoQuantity] = useState<number>(initialQuantity);
@@ -302,81 +279,53 @@ export function LayoutSelector({
         </div>
       </div>
 
-      {/* 2. Selector de tamano de foto */}
+      {/* 2. Selector de tamano de foto - Grid 3x2 */}
       <div>
         <h3 className="text-sm font-medium text-gray-700 mb-3">
-          Tamano de foto
+          Tamaño
         </h3>
-        <div className="relative">
-          <div
-            ref={scrollContainerRef}
-            className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide"
-          >
-            {(Object.keys(PHOTO_SIZES) as PhotoSizeType[]).map((size, index) => {
-              const info = PHOTO_SIZES[size];
-              const isSelected = selectedSize === size;
-              return (
-                <motion.button
-                  key={size}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleSizeSelect(size)}
-                  className={cn(
-                    "relative flex-shrink-0 px-4 py-3 rounded-xl border-2 transition-all duration-200 text-center min-w-[80px]",
-                    isSelected
-                      ? "border-primary bg-primary/10 shadow-lg shadow-primary/20"
-                      : "border-gray-200 bg-white hover:border-gray-300"
-                  )}
-                >
-                  {isSelected && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="absolute -top-2 -right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center shadow-md"
-                    >
-                      <CheckIcon className="w-3 h-3 text-black" />
-                    </motion.div>
-                  )}
-                  <div
-                    className={cn(
-                      "text-base font-bold",
-                      isSelected ? "text-black" : "text-gray-700"
-                    )}
-                  >
-                    {info.displayName}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-0.5">
-                    {info.width}"x{info.height}"
-                  </div>
-                </motion.button>
-              );
-            })}
-          </div>
-
-          {/* Indicador de scroll - gradiente + flecha */}
-          <AnimatePresence>
-            {showScrollHint && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute right-0 top-0 bottom-2 w-16 pointer-events-none flex items-center justify-end pr-1"
-                style={{
-                  background: "linear-gradient(to right, transparent, white 70%)",
-                }}
+        <div className="grid grid-cols-3 gap-2">
+          {(Object.keys(PHOTO_SIZES) as PhotoSizeType[]).map((size, index) => {
+            const info = PHOTO_SIZES[size];
+            const isSelected = selectedSize === size;
+            return (
+              <motion.button
+                key={size}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.03 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleSizeSelect(size)}
+                className={cn(
+                  "relative px-2 py-3 rounded-xl border-2 transition-all duration-200 text-center",
+                  isSelected
+                    ? "border-primary bg-primary/10 shadow-lg shadow-primary/20"
+                    : "border-gray-200 bg-white hover:border-gray-300"
+                )}
               >
-                <motion.div
-                  animate={{ x: [0, 4, 0] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                  className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center shadow-sm"
+                {isSelected && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-primary rounded-full flex items-center justify-center shadow-md"
+                  >
+                    <CheckIcon className="w-3 h-3 text-black" />
+                  </motion.div>
+                )}
+                <div
+                  className={cn(
+                    "text-sm font-bold leading-tight",
+                    isSelected ? "text-black" : "text-gray-700"
+                  )}
                 >
-                  <ChevronRightIcon className="w-4 h-4 text-gray-500" />
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  {info.displayName}
+                </div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  {info.width}"x{info.height}"
+                </div>
+              </motion.button>
+            );
+          })}
         </div>
       </div>
 

@@ -168,7 +168,7 @@ export function LayoutPreview({
     if (photos.length === 1) {
       return `${totalQuantity} ${totalQuantity === 1 ? "copia" : "copias"} de tu foto`;
     }
-    return `${totalQuantity} fotos en total (${photos.length} ${photos.length === 1 ? "imagen" : "imagenes"} distintas)`;
+    return `${totalQuantity} imágenes en total (${photos.length} ${photos.length === 1 ? "imagen" : "imágenes"} distintas)`;
   }, [photos.length, totalQuantity]);
 
   return (

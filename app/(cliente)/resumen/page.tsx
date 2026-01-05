@@ -31,7 +31,7 @@ import { getLayoutById } from "@/lib/config/photo-layouts";
 import { PAPERS } from "@/lib/config/papers";
 
 const productTypeLabels: Record<ProductType, string> = {
-  photo: "Fotos",
+  photo: "Imágenes",
   document: "Documento",
   poster: "Poster",
 };
@@ -394,7 +394,7 @@ function ResumenPageContent() {
                         {selectedLayout.display_name}
                       </div>
                       <div className="text-sm text-gray-500 mt-1">
-                        {totalQuantity} {totalQuantity === 1 ? "foto" : "fotos"} en total
+                        {totalQuantity} {totalQuantity === 1 ? "imagen" : "imágenes"} en total
                       </div>
                     </div>
                   </div>

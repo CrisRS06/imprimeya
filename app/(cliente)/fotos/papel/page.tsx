@@ -156,7 +156,7 @@ export default function FotosPapelPage() {
                   {selectedLayout.display_name}
                 </div>
                 <div className="text-sm text-gray-500 mt-1">
-                  {totalQuantity} {totalQuantity === 1 ? "foto" : "fotos"} en total
+                  {totalQuantity} {totalQuantity === 1 ? "imagen" : "imágenes"} en total
                 </div>
                 <div className="text-sm font-medium text-primary mt-2">
                   {sheetsCount} {sheetsCount === 1 ? "hoja" : "hojas"} a imprimir

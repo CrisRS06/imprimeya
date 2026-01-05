@@ -124,7 +124,7 @@ export default function FotosPage() {
 
       const totalFiles = files.length + acceptedFiles.length;
       if (totalFiles > MAX_FILES) {
-        toast.error(`Maximo ${MAX_FILES} fotos permitidas`);
+        toast.error(`Máximo ${MAX_FILES} imágenes permitidas`);
         return;
       }
 
@@ -227,7 +227,7 @@ export default function FotosPage() {
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-black">Fotos</h1>
+            <h1 className="text-2xl font-bold text-black">Imágenes</h1>
             <p className="text-sm text-gray-400">Paso 1 de 3</p>
           </div>
         </div>
@@ -268,7 +268,7 @@ export default function FotosPage() {
                 <UploadIcon className="w-7 h-7 text-gray-400" />
               </div>
               <p className="text-lg font-medium text-black">
-                {isDragActive ? "Suelta las fotos aqui" : "Agregar fotos"}
+                {isDragActive ? "Suelta las imágenes aquí" : "Agregar imágenes"}
               </p>
               <p className="text-sm text-gray-400 mt-2">
                 Toca para seleccionar o arrastra y suelta
@@ -279,7 +279,7 @@ export default function FotosPage() {
                 <span className="px-3 py-1 rounded-full bg-gray-100 text-xs text-gray-500">HEIC</span>
               </div>
               <p className="text-xs text-gray-400 mt-4">
-                Max 10MB por foto - Hasta {MAX_FILES} fotos
+                Max 10MB por imagen - Hasta {MAX_FILES} imágenes
               </p>
             </motion.div>
           ) : (
@@ -352,7 +352,7 @@ export default function FotosPage() {
               </div>
 
               <p className="text-sm text-gray-600 font-medium">
-                {files.length} {files.length === 1 ? "foto" : "fotos"} seleccionadas
+                {files.length} {files.length === 1 ? "imagen" : "imágenes"} seleccionadas
               </p>
               <p className="text-xs text-gray-400 mt-1">
                 Toca para agregar mas
@@ -369,7 +369,7 @@ export default function FotosPage() {
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">1</div>
-              <p className="text-sm text-gray-600">Sube las fotos que quieres imprimir</p>
+              <p className="text-sm text-gray-600">Sube las imágenes que quieres imprimir</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-500">2</div>
@@ -404,7 +404,7 @@ export default function FotosPage() {
               <ArrowRightIcon className="w-5 h-5 ml-2" />
             </>
           ) : (
-            "Agrega al menos una foto"
+            "Agrega al menos una imagen"
           )}
         </Button>
       </section>

@@ -64,7 +64,8 @@ CREATE INDEX IF NOT EXISTS idx_staff_members_active ON staff_members(is_active) 
 ALTER TABLE staff_members ENABLE ROW LEVEL SECURITY;
 
 -- Only authenticated users can view staff members
-CREATE POLICY IF NOT EXISTS "Staff can view staff list" ON staff_members
+DROP POLICY IF EXISTS "Staff can view staff list" ON staff_members;
+CREATE POLICY "Staff can view staff list" ON staff_members
     FOR SELECT
     TO authenticated
     USING (
@@ -75,7 +76,8 @@ CREATE POLICY IF NOT EXISTS "Staff can view staff list" ON staff_members
     );
 
 -- Only admins can insert/update staff members
-CREATE POLICY IF NOT EXISTS "Admins can manage staff" ON staff_members
+DROP POLICY IF EXISTS "Admins can manage staff" ON staff_members;
+CREATE POLICY "Admins can manage staff" ON staff_members
     FOR ALL
     TO authenticated
     USING (

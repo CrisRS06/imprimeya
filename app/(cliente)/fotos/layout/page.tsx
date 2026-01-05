@@ -122,13 +122,13 @@ export default function FotosLayoutPage() {
             <LayoutGridIcon className="w-8 h-8 text-gray-400" />
           </div>
           <h2 className="text-xl font-bold text-black mb-2">
-            No hay fotos seleccionadas
+            No hay imágenes seleccionadas
           </h2>
           <p className="text-gray-500 mb-6">
-            Primero debes subir las fotos que quieres imprimir
+            Primero debes subir las imágenes que quieres imprimir
           </p>
           <Button onClick={() => router.push("/fotos")}>
-            Subir fotos
+            Subir imágenes
           </Button>
         </div>
       </div>

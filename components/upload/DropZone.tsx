@@ -207,7 +207,7 @@ export function DropZone({
         <input {...getInputProps()} />
         <UploadCloudIcon className="w-12 h-12 mx-auto text-gray-400 mb-4" />
         <p className="text-lg font-medium text-gray-700">
-          {isDragActive ? "Solta las fotos aqui" : "Toca para agregar fotos"}
+          {isDragActive ? "Suelta las imágenes aquí" : "Toca para agregar imágenes"}
         </p>
         <p className="text-sm text-gray-500 mt-2">
           o arrastra y solta aqui
@@ -221,7 +221,7 @@ export function DropZone({
       {files.length > 0 && (
         <div className="space-y-3">
           <h3 className="font-medium text-gray-700">
-            Fotos seleccionadas ({files.length})
+            Imágenes seleccionadas ({files.length})
           </h3>
           <div className="space-y-2">
             {files.map((file) => (

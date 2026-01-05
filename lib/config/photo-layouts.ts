@@ -36,7 +36,7 @@ export const PRINTABLE_AREA = {
 export const PHOTO_GAP = 0.125 // pulgadas
 
 // Tipos de tamano de foto disponibles
-export type PhotoSizeType = '4x6' | '5x7' | '3x5' | 'wallet' | 'carnet'
+export type PhotoSizeType = '4x6' | '5x7' | '3x5' | 'wallet' | 'carnet' | 'full'
 
 export interface PhotoSizeInfo {
   name: string
@@ -82,12 +82,43 @@ export const PHOTO_SIZES: Record<PhotoSizeType, PhotoSizeInfo> = {
     height: 2,
     maxPerSheet: 16,
   },
+  'full': {
+    name: 'full',
+    displayName: 'Hoja Completa (8x10.5)',
+    width: 8,
+    height: 10.5,
+    maxPerSheet: 1,
+  },
 }
 
 // Layouts predefinidos (espejo de la BD para uso offline)
 // Pagina carta: 8.5" x 11", margen minimo 0.25"
 // Las posiciones estan calculadas para centrar y distribuir bien las fotos
 export const PHOTO_LAYOUTS: PhotoLayout[] = [
+  // Hoja Completa - Una imagen que ocupa toda la hoja
+  {
+    id: '1x-full',
+    name: '1x-full',
+    display_name: 'Hoja Completa',
+    description: 'Una imagen que ocupa toda la hoja',
+    photo_size: 'full',
+    photo_width_inches: 8,
+    photo_height_inches: 10.5,
+    photos_per_sheet: 1,
+    allows_repeat: true,
+    allows_different: false,
+    layout_data: {
+      // Centrado con margenes minimos de 0.25" en todos los lados
+      // x = 0.25 (margen izquierdo)
+      // y = 0.25 (margen superior)
+      // width = 8" (deja 0.25" a cada lado)
+      // height = 10.5" (deja 0.25" arriba y 0.25" abajo)
+      positions: [{ x: 0.25, y: 0.25, width: 8, height: 10.5, rotation: 0 }],
+    },
+    compatible_papers: ['fotografico', 'bond_normal', 'opalina', 'sticker_semigloss'],
+    is_active: true,
+    sort_order: 0,
+  },
   // 4x6 - Una foto centrada
   {
     id: '1x-4x6',

@@ -354,7 +354,7 @@ export function LayoutSelector({
               animate={{ opacity: 1 }}
               className="flex justify-between items-center pt-3 border-t border-gray-200"
             >
-              <span className="text-sm text-gray-600">Total de fotos:</span>
+              <span className="text-sm text-gray-600">Total de imágenes:</span>
               <motion.span
                 key={totalQuantity}
                 initial={{ scale: 1.1 }}
@@ -477,7 +477,7 @@ export function LayoutSelector({
               {totalQuantity} {totalQuantity === 1 ? "copia" : "copias"} de tu foto
             </div>
             <div className="text-xs text-gray-500 mt-2">
-              {sheetsInfo.photosPerSheet} fotos por hoja
+              {sheetsInfo.photosPerSheet} imágenes por hoja
             </div>
           </div>
         </motion.div>

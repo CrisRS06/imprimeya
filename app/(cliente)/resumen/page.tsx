@@ -469,17 +469,56 @@ function ResumenPageContent() {
                 </div>
               )}
 
-              {/* Document-specific details - placeholder */}
+              {/* Document-specific details */}
               {productType === "document" && (
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-500">Paginas</span>
-                    <span className="font-medium text-gray-900">-</span>
+                    <span className="text-gray-500">Páginas</span>
+                    <span className="font-medium text-gray-900">{sheetsCount}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500">Tipo</span>
+                    <span className="font-medium text-gray-900">
+                      {isColor ? "Color" : "Blanco y Negro"}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-500">Papel</span>
                     {selectedPaper && <PaperBadge paperType={selectedPaper} />}
                   </div>
+
+                  {/* Desglose de precio */}
+                  {priceBreakdown && (
+                    <>
+                      <hr />
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">
+                            Impresión {isColor ? "color" : "B/N"} ({sheetsCount} {sheetsCount === 1 ? "pág" : "págs"} × {formatPrice(priceBreakdown.basePrice)})
+                          </span>
+                          <span className="text-gray-900">{formatPrice(priceBreakdown.basePrice * sheetsCount)}</span>
+                        </div>
+
+                        {priceBreakdown.paperSurcharge > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">
+                              Recargo papel ({formatPrice(priceBreakdown.paperSurcharge)}/pág)
+                            </span>
+                            <span className="text-gray-900">{formatPrice(priceBreakdown.paperSurcharge * sheetsCount)}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <hr />
+
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-semibold text-gray-900">Total</span>
+                        <span className="text-2xl font-bold text-primary">
+                          {priceBreakdown.formattedTotal}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 

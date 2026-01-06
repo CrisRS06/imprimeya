@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ import { PaperBadge } from "@/components/fotos/PaperSelector";
 import type { ProductType, PaperType, PhotoLayout } from "@/lib/supabase/types";
 import { getLayoutById } from "@/lib/config/photo-layouts";
 import { PAPERS } from "@/lib/config/papers";
+import { calculatePrice, formatPrice } from "@/lib/utils/price-calculator";
 
 const productTypeLabels: Record<ProductType, string> = {
   photo: "Imágenes",
@@ -66,6 +67,19 @@ function ResumenPageContent() {
   const [totalQuantity, setTotalQuantity] = useState<number>(1);
   const [isColor, setIsColor] = useState<boolean>(true); // Para documentos
   const [fillMode, setFillMode] = useState<"fill" | "fit">("fill"); // fill=cover, fit=contain
+
+  // Calcular precio
+  const priceBreakdown = useMemo(() => {
+    if (!selectedPaper) return null;
+
+    return calculatePrice({
+      sizeName: selectedLayout?.photo_size || "4x6",
+      paperType: selectedPaper,
+      quantity: sheetsCount,
+      productType: productType,
+      isColor: productType === "photo" ? true : isColor,
+    });
+  }, [selectedPaper, sheetsCount, productType, isColor, selectedLayout]);
 
   // Load data from sessionStorage
   useEffect(() => {
@@ -419,6 +433,39 @@ function ResumenPageContent() {
                       {sheetsCount}
                     </span>
                   </div>
+
+                  {/* Desglose de precio */}
+                  {priceBreakdown && (
+                    <>
+                      <hr />
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">
+                            Impresión ({sheetsCount} {sheetsCount === 1 ? "hoja" : "hojas"} × {formatPrice(priceBreakdown.basePrice)})
+                          </span>
+                          <span className="text-gray-900">{formatPrice(priceBreakdown.basePrice * sheetsCount)}</span>
+                        </div>
+
+                        {priceBreakdown.paperSurcharge > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">
+                              Recargo papel ({formatPrice(priceBreakdown.paperSurcharge)}/hoja)
+                            </span>
+                            <span className="text-gray-900">{formatPrice(priceBreakdown.paperSurcharge * sheetsCount)}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <hr />
+
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-semibold text-gray-900">Total</span>
+                        <span className="text-2xl font-bold text-primary">
+                          {priceBreakdown.formattedTotal}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 

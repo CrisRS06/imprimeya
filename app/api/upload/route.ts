@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 import { v4 as uuidv4 } from "uuid";
 import { checkRateLimit, getClientId, RATE_LIMITS } from "@/lib/utils/rate-limiter";
 import { log, generateRequestId } from "@/lib/logger";
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = await createServiceClient();
 
     // Generar nombre unico
     const fileId = uuidv4();
@@ -163,7 +163,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = await createServiceClient();
 
     const { error } = await supabase.storage.from("originals").remove([path]);
 

@@ -122,6 +122,7 @@ function PrintSheet({
               <img
                 src={photoUrl}
                 alt=""
+                loading="lazy"
                 style={{
                   width: "100%",
                   height: "100%",
@@ -409,7 +410,7 @@ export default function PrintPage({
         </div>
       </div>
 
-      {/* Contenedor de hojas - estilos de pantalla con Tailwind, CSS global hace override en print */}
+      {/* Contenedor de hojas - con lazy loading en imagenes */}
       <div className="print-sheets-container pt-28 pb-8 bg-gray-100">
         {sheets.map((sheetPhotos, index) => (
           <PrintSheet

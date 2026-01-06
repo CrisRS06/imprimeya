@@ -188,7 +188,7 @@ export default function EstadoPedidoPage({
     );
   }
 
-  const statusConfig = STATUS_CONFIG[order.status];
+  const statusConfig = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.pending;
   const StatusIcon = statusConfig.icon;
 
   return (

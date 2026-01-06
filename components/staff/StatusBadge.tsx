@@ -31,7 +31,7 @@ const STATUS_CONFIG: Record<
 };
 
 export function StatusBadge({ status, size = "md", className }: StatusBadgeProps) {
-  const config = STATUS_CONFIG[status];
+  const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
 
   const sizeClasses = {
     sm: "text-xs px-2 py-0.5",

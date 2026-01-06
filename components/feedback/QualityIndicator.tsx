@@ -61,7 +61,7 @@ export function QualityIndicator({
   compact = false,
   className,
 }: QualityIndicatorProps) {
-  const config = qualityConfig[quality];
+  const config = qualityConfig[quality] ?? qualityConfig.acceptable;
   const Icon = config.icon;
 
   if (compact) {
@@ -173,7 +173,7 @@ interface QualityPulseProps {
 }
 
 export function QualityPulse({ quality, size = "md", className }: QualityPulseProps) {
-  const config = qualityConfig[quality];
+  const config = qualityConfig[quality] ?? qualityConfig.acceptable;
   const sizeClasses = {
     sm: "w-2 h-2",
     md: "w-3 h-3",

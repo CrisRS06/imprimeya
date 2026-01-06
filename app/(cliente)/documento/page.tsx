@@ -22,7 +22,7 @@ interface UploadedDocument {
   id: string;
   file: File;
   name: string;
-  type: "pdf" | "docx" | "doc";
+  type: "pdf";
   size: number;
   pageCount: number | null;
   status: "processing" | "done" | "error";
@@ -31,8 +31,6 @@ interface UploadedDocument {
 
 const ACCEPTED_TYPES = {
   "application/pdf": [".pdf"],
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
-  "application/msword": [".doc"],
 };
 
 export default function DocumentoPage() {
@@ -41,11 +39,9 @@ export default function DocumentoPage() {
   const [document, setDocument] = useState<UploadedDocument | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const getFileType = (file: File): "pdf" | "docx" | "doc" | null => {
+  const getFileType = (file: File): "pdf" | null => {
     const name = file.name.toLowerCase();
     if (name.endsWith(".pdf")) return "pdf";
-    if (name.endsWith(".docx")) return "docx";
-    if (name.endsWith(".doc")) return "doc";
     return null;
   };
 
@@ -76,20 +72,15 @@ export default function DocumentoPage() {
     // In a full implementation, we'd use pdf-lib to extract page count
     let pageCount: number | null = null;
 
-    // Try to get page count for PDFs using a simple approach
-    if (fileType === "pdf") {
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        const text = new TextDecoder("latin1").decode(arrayBuffer);
-        // Simple regex to count /Type /Page occurrences (rough estimate)
-        const matches = text.match(/\/Type\s*\/Page[^s]/g);
-        pageCount = matches ? matches.length : 1;
-      } catch {
-        pageCount = 1; // Default to 1 if we can't determine
-      }
-    } else {
-      // For Word docs, we'll estimate based on file size (rough estimate)
-      pageCount = Math.max(1, Math.ceil(file.size / 50000));
+    // Get page count for PDFs using a simple approach
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const text = new TextDecoder("latin1").decode(arrayBuffer);
+      // Simple regex to count /Type /Page occurrences (rough estimate)
+      const matches = text.match(/\/Type\s*\/Page[^s]/g);
+      pageCount = matches ? matches.length : 1;
+    } catch {
+      pageCount = 1; // Default to 1 if we can't determine
     }
 
     return {
@@ -109,7 +100,7 @@ export default function DocumentoPage() {
       rejectedFiles.forEach((rejection) => {
         const errors = rejection.errors.map((e) => {
           if (e.code === "file-too-large") return "Archivo muy grande (max 20MB)";
-          if (e.code === "file-invalid-type") return "Formato no soportado. Usa PDF o Word";
+          if (e.code === "file-invalid-type") return "Solo se acepta formato PDF";
           return e.message;
         });
         toast.error(`${rejection.file.name}: ${errors.join(", ")}`);
@@ -142,12 +133,22 @@ export default function DocumentoPage() {
 
   const canContinue = document && document.status === "done";
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!document) return;
 
     setProductType("document");
 
-    // Save to sessionStorage
+    // Convert file to base64 for storage
+    const arrayBuffer = await document.file.arrayBuffer();
+    const base64 = btoa(
+      new Uint8Array(arrayBuffer).reduce(
+        (data, byte) => data + String.fromCharCode(byte),
+        ""
+      )
+    );
+
+    // Save PDF data and metadata to sessionStorage
+    sessionStorage.setItem("documentPdfData", base64);
     sessionStorage.setItem(
       "uploadedDocument",
       JSON.stringify({
@@ -158,7 +159,7 @@ export default function DocumentoPage() {
       })
     );
 
-    router.push("/documento/opciones");
+    router.push("/documento/paginas");
   };
 
   return (
@@ -224,7 +225,7 @@ export default function DocumentoPage() {
               </p>
               <p className="text-sm text-gray-500 mt-1">o arrastra y suelta</p>
               <p className="text-xs text-gray-400 mt-4">
-                PDF o Word - Max 20MB
+                Solo PDF - Max 20MB
               </p>
             </motion.div>
           </div>
@@ -282,13 +283,21 @@ export default function DocumentoPage() {
       {/* Info box */}
       <section className="px-4 pb-4">
         <div className="bg-emerald-50 rounded-2xl p-4">
-          <h3 className="font-medium text-emerald-900 mb-2">Formatos aceptados</h3>
-          <ul className="text-sm text-emerald-700 space-y-1">
-            <li>PDF (.pdf) - Recomendado</li>
-            <li>Word (.docx, .doc)</li>
-          </ul>
+          <h3 className="font-medium text-emerald-900 mb-2">Formato aceptado</h3>
+          <p className="text-sm text-emerald-700">PDF (.pdf)</p>
           <p className="text-xs text-emerald-600 mt-3">
             Se imprime a pagina completa en papel carta
+          </p>
+          <p className="text-xs text-gray-500 mt-3">
+            Tienes un Word?{" "}
+            <a
+              href="https://smallpdf.com/word-to-pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-emerald-600 underline hover:text-emerald-700"
+            >
+              Convertilo a PDF gratis aqui
+            </a>
           </p>
         </div>
       </section>

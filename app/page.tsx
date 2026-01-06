@@ -32,7 +32,7 @@ const productOptions: ProductOption[] = [
   {
     id: "document",
     title: "Documentos",
-    description: "PDF, Word a pagina completa",
+    description: "PDF a pagina completa",
     icon: FileTextIcon,
     href: "/documento",
   },

@@ -18,6 +18,9 @@ export const COMPRESSION_TIMEOUT_MS = 30000; // 30 segundos
 // Máximo de archivos por sesión
 export const MAX_FILES_PER_SESSION = 20;
 
+// Máximo de archivos procesando simultáneamente (evita congelar UI)
+export const MAX_CONCURRENT_UPLOADS = 2;
+
 // Calidades de compresión (de mayor a menor)
 export const COMPRESSION_QUALITIES = [0.8, 0.6, 0.4, 0.3];
 

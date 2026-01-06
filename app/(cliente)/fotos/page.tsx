@@ -21,7 +21,7 @@ import { convertHeicToJpeg, isHeicFile } from "@/lib/utils/heic-converter";
 import { compressImage, formatFileSize } from "@/lib/utils/image-compressor";
 import { QualityPulse } from "@/components/feedback/QualityIndicator";
 import { ProcessingOverlay } from "@/components/feedback/LoadingStates";
-import { MAX_UPLOAD_SIZE, UPLOAD_TIMEOUT_MS, MAX_FILES_PER_SESSION } from "@/lib/constants";
+import { MAX_UPLOAD_SIZE, UPLOAD_TIMEOUT_MS, MAX_FILES_PER_SESSION, MAX_CONCURRENT_UPLOADS } from "@/lib/constants";
 
 interface UploadedFile {
   id: string;
@@ -35,6 +35,35 @@ interface UploadedFile {
 }
 
 const MAX_FILES = MAX_FILES_PER_SESSION;
+
+/**
+ * Procesa items con concurrencia limitada para evitar bloquear la UI
+ * @param items - Array de items a procesar
+ * @param processor - Función que procesa cada item
+ * @param concurrency - Número máximo de operaciones simultáneas
+ */
+async function processWithConcurrency<T, R>(
+  items: T[],
+  processor: (item: T, index: number) => Promise<R>,
+  concurrency: number = MAX_CONCURRENT_UPLOADS
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let currentIndex = 0;
+
+  async function processNext(): Promise<void> {
+    while (currentIndex < items.length) {
+      const index = currentIndex++;
+      const result = await processor(items[index], index);
+      results[index] = result;
+    }
+  }
+
+  // Iniciar `concurrency` workers en paralelo
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, processNext);
+  await Promise.all(workers);
+
+  return results;
+}
 
 export default function FotosPage() {
   const router = useRouter();
@@ -190,8 +219,14 @@ export default function FotosPage() {
 
       setIsProcessing(true);
 
-      const pendingFiles: UploadedFile[] = acceptedFiles.map((file) => ({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      // Crear IDs únicos para cada archivo
+      const fileIds = acceptedFiles.map(() =>
+        `${Date.now()}-${Math.random().toString(36).slice(2)}`
+      );
+
+      // Agregar archivos como "pendientes" (en cola)
+      const pendingFiles: UploadedFile[] = acceptedFiles.map((file, i) => ({
+        id: fileIds[i],
         file,
         preview: "",
         status: "processing" as const,
@@ -199,14 +234,25 @@ export default function FotosPage() {
 
       setFiles((prev) => [...prev, ...pendingFiles]);
 
-      const processedFiles = await Promise.all(
-        acceptedFiles.map((file) => processFile(file))
-      );
+      // Procesar con concurrencia limitada (2 a la vez)
+      // Actualiza la UI después de cada archivo completado
+      await processWithConcurrency(
+        acceptedFiles,
+        async (file, index) => {
+          const result = await processFile(file);
+          const resultWithId = { ...result, id: fileIds[index] };
 
-      setFiles((prev) => {
-        const updated = prev.filter((f) => f.status !== "processing");
-        return [...updated, ...processedFiles];
-      });
+          // Actualizar UI inmediatamente después de cada archivo
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.id === fileIds[index] ? resultWithId : f
+            )
+          );
+
+          return resultWithId;
+        },
+        MAX_CONCURRENT_UPLOADS
+      );
 
       setIsProcessing(false);
     },

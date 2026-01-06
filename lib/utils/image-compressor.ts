@@ -106,6 +106,9 @@ async function performCompression(file: File): Promise<Omit<CompressionResult, "
       const ctx = canvas.getContext("2d");
 
       if (!ctx) {
+        // Liberar memoria del canvas
+        cleanupCanvas(canvas);
+
         resolve({
           success: false,
           file,
@@ -180,6 +183,9 @@ function tryCompressionLevels(
 
     // Si ya es muy pequeño, fallar
     if (currentWidth < 800 || currentHeight < 800) {
+      // Liberar memoria del canvas
+      cleanupCanvas(canvas);
+
       resolve({
         success: false,
         file: new File([], fileName),
@@ -194,6 +200,10 @@ function tryCompressionLevels(
     const newCtx = newCanvas.getContext("2d");
 
     if (!newCtx) {
+      // Liberar memoria de ambos canvas
+      cleanupCanvas(canvas);
+      cleanupCanvas(newCanvas);
+
       resolve({
         success: false,
         file: new File([], fileName),
@@ -206,6 +216,9 @@ function tryCompressionLevels(
     newCanvas.width = Math.round(currentWidth * 0.7);
     newCanvas.height = Math.round(currentHeight * 0.7);
     newCtx.drawImage(canvas, 0, 0, newCanvas.width, newCanvas.height);
+
+    // Liberar memoria del canvas anterior antes de recursar
+    cleanupCanvas(canvas);
 
     // Reintentar con el canvas más pequeño
     tryCompressionLevels(newCanvas, fileName, 0, resolve);
@@ -229,6 +242,9 @@ function tryCompressionLevels(
           fileName.replace(/\.[^.]+$/, ".jpg"),
           { type: "image/jpeg" }
         );
+
+        // Liberar memoria del canvas
+        cleanupCanvas(canvas);
 
         resolve({
           success: true,
@@ -260,4 +276,13 @@ export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+/**
+ * Libera memoria del canvas (GPU y pixel buffer)
+ * Llamar después de terminar de usar un canvas para evitar memory leaks
+ */
+function cleanupCanvas(canvas: HTMLCanvasElement): void {
+  canvas.width = 0;
+  canvas.height = 0;
 }

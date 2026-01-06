@@ -24,7 +24,7 @@ interface ProductOption {
 const productOptions: ProductOption[] = [
   {
     id: "photo",
-    title: "Fotos",
+    title: "Imágenes",
     description: "4x6, 5x7, wallet y mas",
     icon: ImageIcon,
     href: "/fotos",

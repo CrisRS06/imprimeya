@@ -176,12 +176,36 @@ function ResumenPageContent() {
     hapticFeedback("medium");
 
     try {
-      // Validar layout para fotos - previene ordenes sin layoutId
-      if (productType === "photo" && !selectedLayout) {
-        toast.error("Debes seleccionar un layout primero");
-        router.push("/fotos/layout");
-        setIsSubmitting(false);
-        return;
+      // === VALIDACIONES SEGUN TIPO DE PRODUCTO ===
+
+      if (productType === "photo") {
+        // Fotos: validar layout, papel y que haya fotos
+        if (!selectedLayout) {
+          toast.error("Debes seleccionar un layout primero");
+          router.push("/fotos/layout");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!selectedPaper) {
+          toast.error("Debes seleccionar un tipo de papel");
+          router.push("/fotos/papel");
+          setIsSubmitting(false);
+          return;
+        }
+        if (photos.length === 0) {
+          toast.error("No hay fotos para imprimir");
+          router.push("/fotos");
+          setIsSubmitting(false);
+          return;
+        }
+      } else if (productType === "document") {
+        // Documentos: validar que haya documento subido
+        if (photos.length === 0) {
+          toast.error("No hay documento para imprimir");
+          router.push("/documento");
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       // Get storage paths (not just names) for the images

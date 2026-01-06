@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { hapticFeedback } from "@/hooks/useCanvasGestures";
 import { SuccessAnimation } from "@/components/feedback/SuccessAnimation";
 import { Spinner } from "@/components/feedback/LoadingStates";
+import { Skeleton } from "@/components/ui/skeleton";
 import { LayoutPreviewCompact } from "@/components/fotos/LayoutPreview";
 import { PaperBadge } from "@/components/fotos/PaperSelector";
 import type { ProductType, PaperType, PhotoLayout } from "@/lib/supabase/types";
@@ -625,15 +626,67 @@ function ResumenPageContent() {
   );
 }
 
+function ResumenSkeleton() {
+  return (
+    <div className="min-h-full flex flex-col bg-white">
+      {/* Header skeleton */}
+      <header className="px-6 pt-6 pb-4 flex items-center justify-between">
+        <Skeleton className="h-5 w-16" />
+        <Skeleton className="h-6 w-20" />
+        <div className="w-16" />
+      </header>
+
+      {/* Content skeleton */}
+      <main className="flex-1 px-4 pb-4">
+        <div className="max-w-md mx-auto space-y-4">
+          {/* Order card skeleton */}
+          <div className="bg-white rounded-2xl border p-5 space-y-4">
+            <div className="flex items-center gap-3">
+              <Skeleton className="w-12 h-12 rounded-xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+            </div>
+            <Skeleton className="h-px w-full" />
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+              <div className="flex justify-between">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-12" />
+              </div>
+            </div>
+            <Skeleton className="h-px w-full" />
+            <div className="flex justify-between items-center">
+              <Skeleton className="h-6 w-12" />
+              <Skeleton className="h-8 w-24" />
+            </div>
+          </div>
+
+          {/* Code preview skeleton */}
+          <div className="bg-gray-100 rounded-2xl p-5">
+            <Skeleton className="h-4 w-24 mx-auto mb-3" />
+            <Skeleton className="h-10 w-40 mx-auto" />
+          </div>
+        </div>
+      </main>
+
+      {/* Button skeleton */}
+      <section className="sticky bottom-0 bg-white border-t px-4 py-4">
+        <div className="max-w-md mx-auto">
+          <Skeleton className="h-14 w-full rounded-2xl" />
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function ResumenPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-full flex items-center justify-center">
-          <Spinner size="lg" />
-        </div>
-      }
-    >
+    <Suspense fallback={<ResumenSkeleton />}>
       <ResumenPageContent />
     </Suspense>
   );

@@ -502,10 +502,10 @@ export default function FotosPage() {
                           e.stopPropagation();
                           removeFile(file.id);
                         }}
-                        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+                        className="absolute top-1 right-1 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors"
                         aria-label="Eliminar foto"
                       >
-                        <XIcon className="w-3 h-3" />
+                        <XIcon className="w-4 h-4" />
                       </button>
                     </motion.div>
                   ))}

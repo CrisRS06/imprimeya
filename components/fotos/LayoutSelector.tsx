@@ -73,14 +73,15 @@ function PhotoQuantityItem({
           whileTap={{ scale: 0.9 }}
           onClick={() => onQuantityChange(photo.id, -1)}
           disabled={photo.quantity <= 1}
+          aria-label="Menos"
           className={cn(
-            "w-9 h-9 rounded-full flex items-center justify-center transition-all",
+            "w-11 h-11 rounded-full flex items-center justify-center transition-all",
             photo.quantity <= 1
               ? "bg-gray-100 text-gray-300"
               : "bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300"
           )}
         >
-          <MinusIcon className="w-4 h-4" />
+          <MinusIcon className="w-5 h-5" />
         </motion.button>
 
         <motion.span
@@ -96,14 +97,15 @@ function PhotoQuantityItem({
           whileTap={{ scale: 0.9 }}
           onClick={() => onQuantityChange(photo.id, 1)}
           disabled={photo.quantity >= 50}
+          aria-label="Más"
           className={cn(
-            "w-9 h-9 rounded-full flex items-center justify-center transition-all",
+            "w-11 h-11 rounded-full flex items-center justify-center transition-all",
             photo.quantity >= 50
               ? "bg-gray-100 text-gray-300"
               : "bg-primary text-black hover:bg-primary/90 active:bg-primary/80 shadow-md shadow-primary/30"
           )}
         >
-          <PlusIcon className="w-4 h-4" />
+          <PlusIcon className="w-5 h-5" />
         </motion.button>
       </div>
     </motion.div>
@@ -374,6 +376,7 @@ export function LayoutSelector({
                 whileTap={{ scale: 0.9 }}
                 onClick={() => handleSingleQuantityChange(-1)}
                 disabled={singlePhotoQuantity <= 1}
+                aria-label="Menos"
                 className={cn(
                   "w-14 h-14 rounded-full flex items-center justify-center transition-all",
                   singlePhotoQuantity <= 1
@@ -399,6 +402,7 @@ export function LayoutSelector({
                 whileTap={{ scale: 0.9 }}
                 onClick={() => handleSingleQuantityChange(1)}
                 disabled={singlePhotoQuantity >= 100}
+                aria-label="Más"
                 className={cn(
                   "w-14 h-14 rounded-full flex items-center justify-center transition-all",
                   singlePhotoQuantity >= 100
@@ -447,8 +451,9 @@ export function LayoutSelector({
                   key={q}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => handleSingleQuantitySet(q)}
+                  aria-label={`${q} copias`}
                   className={cn(
-                    "px-4 py-2 rounded-full text-sm font-medium transition-all",
+                    "px-4 py-2 min-h-[44px] rounded-full text-sm font-medium transition-all",
                     singlePhotoQuantity === q
                       ? "bg-primary text-black shadow-md"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"

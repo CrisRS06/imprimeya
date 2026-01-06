@@ -10,6 +10,7 @@ import {
   AlertCircleIcon,
   ArrowRightIcon,
   ArrowLeftIcon,
+  RefreshCwIcon,
 } from "lucide-react";
 import { useDropzone, FileRejection } from "react-dropzone";
 import { cn } from "@/lib/utils";
@@ -222,6 +223,47 @@ export default function FotosPage() {
     });
   };
 
+  const retryUpload = useCallback(async (fileId: string) => {
+    const fileToRetry = files.find((f) => f.id === fileId);
+    if (!fileToRetry?.file) return;
+
+    // Marcar como procesando
+    setFiles((prev) =>
+      prev.map((f) =>
+        f.id === fileId
+          ? { ...f, status: "processing" as const, error: undefined }
+          : f
+      )
+    );
+
+    try {
+      // Re-ejecutar el pipeline completo
+      const processed = await processFile(fileToRetry.file);
+
+      // Actualizar con el resultado, manteniendo el ID original
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileId
+            ? { ...processed, id: fileId }
+            : f
+        )
+      );
+
+      if (processed.status === "done") {
+        toast.success(`${fileToRetry.file.name} subida correctamente`);
+      }
+    } catch (error) {
+      console.error("Retry error:", error);
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === fileId
+            ? { ...f, status: "error" as const, error: "Error al reintentar. Intenta de nuevo." }
+            : f
+        )
+      );
+    }
+  }, [files, processFile]);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
@@ -372,15 +414,40 @@ export default function FotosPage() {
                       )}
 
                       {file.status === "error" && (
-                        <div className="absolute inset-0 bg-destructive/80 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-destructive/90 flex flex-col items-center justify-center gap-1 p-2">
                           <AlertCircleIcon className="w-5 h-5 text-white" />
+                          <span className="text-[10px] text-white/90 text-center line-clamp-2 px-1">
+                            {file.error || "Error"}
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              retryUpload(file.id);
+                            }}
+                            className="mt-1 px-2.5 py-1 bg-white text-destructive rounded-full text-[10px] font-medium hover:bg-white/90 transition-colors flex items-center gap-1"
+                          >
+                            <RefreshCwIcon className="w-3 h-3" />
+                            Reintentar
+                          </button>
                         </div>
                       )}
 
                       {file.status === "done" && !file.storagePath && (
-                        <div className="absolute inset-0 bg-primary/80 flex flex-col items-center justify-center">
+                        <div className="absolute inset-0 bg-amber-500/90 flex flex-col items-center justify-center gap-1 p-2">
                           <AlertCircleIcon className="w-5 h-5 text-white" />
-                          <span className="text-[8px] text-white mt-1">Reintentar</span>
+                          <span className="text-[10px] text-white/90 text-center">
+                            No se subió
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              retryUpload(file.id);
+                            }}
+                            className="mt-1 px-2.5 py-1 bg-white text-amber-600 rounded-full text-[10px] font-medium hover:bg-white/90 transition-colors flex items-center gap-1"
+                          >
+                            <RefreshCwIcon className="w-3 h-3" />
+                            Reintentar
+                          </button>
                         </div>
                       )}
 

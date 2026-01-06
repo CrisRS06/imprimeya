@@ -83,17 +83,33 @@ function ResumenPageContent() {
 
   // Load data from sessionStorage
   useEffect(() => {
-    // Photos con cantidades
-    const storedPhotos = sessionStorage.getItem("uploadedPhotos");
-    if (storedPhotos) {
-      try {
-        const parsed = JSON.parse(storedPhotos) as PhotoWithQuantity[];
-        setPhotos(parsed.map((p) => ({ ...p, quantity: p.quantity || 1 })));
-        // Calcular total desde las fotos
-        const total = parsed.reduce((sum, p) => sum + (p.quantity || 1), 0);
-        setTotalQuantity(total);
-      } catch {
-        // fallback
+    // Para documentos: cargar storagePath del PDF
+    if (productType === "document") {
+      const documentPath = sessionStorage.getItem("documentStoragePath");
+      if (documentPath) {
+        // Crear pseudo-photo con el storagePath del documento
+        const docInfo = sessionStorage.getItem("uploadedDocument");
+        const docName = docInfo ? JSON.parse(docInfo).name : "documento.pdf";
+        setPhotos([{
+          id: "document-pdf",
+          name: docName,
+          storagePath: documentPath,
+          quantity: 1,
+        } as PhotoWithQuantity]);
+      }
+    } else {
+      // Photos con cantidades (para fotos)
+      const storedPhotos = sessionStorage.getItem("uploadedPhotos");
+      if (storedPhotos) {
+        try {
+          const parsed = JSON.parse(storedPhotos) as PhotoWithQuantity[];
+          setPhotos(parsed.map((p) => ({ ...p, quantity: p.quantity || 1 })));
+          // Calcular total desde las fotos
+          const total = parsed.reduce((sum, p) => sum + (p.quantity || 1), 0);
+          setTotalQuantity(total);
+        } catch {
+          // fallback
+        }
       }
     }
 
@@ -129,7 +145,7 @@ function ResumenPageContent() {
     if (storedFillMode) {
       setFillMode(storedFillMode);
     }
-  }, []);
+  }, [productType]);
 
   // Generate preview code on mount
   useEffect(() => {
@@ -232,6 +248,7 @@ function ResumenPageContent() {
   // Go home
   const handleGoHome = () => {
     resetOrder();
+    // Limpiar datos de fotos
     sessionStorage.removeItem("uploadedFiles");
     sessionStorage.removeItem("uploadedPhotos");
     sessionStorage.removeItem("selectedLayoutId");
@@ -239,6 +256,12 @@ function ResumenPageContent() {
     sessionStorage.removeItem("sheetsCount");
     sessionStorage.removeItem("repeatMode");
     sessionStorage.removeItem("uploadSessionId");
+    sessionStorage.removeItem("fillMode");
+    // Limpiar datos de documentos
+    sessionStorage.removeItem("documentPdfData");
+    sessionStorage.removeItem("documentStoragePath");
+    sessionStorage.removeItem("uploadedDocument");
+    sessionStorage.removeItem("documentIsColor");
     router.push("/");
   };
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import {
   ArrowLeftIcon,
   ChevronRightIcon,
@@ -11,9 +12,12 @@ import {
   PaletteIcon,
   CircleIcon,
   PrinterIcon,
+  LoaderIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
+import { base64ToArrayBuffer } from "@/lib/utils/pdf-processor";
 import type { PaperType } from "@/lib/supabase/types";
 import {
   PRINT_COSTS,
@@ -35,6 +39,7 @@ export default function DocumentoOpcionesPage() {
   const [document, setDocument] = useState<StoredDocument | null>(null);
   const [isColor, setIsColor] = useState(true);
   const [selectedPaper, setSelectedPaper] = useState<PaperType>("bond_normal");
+  const [isUploading, setIsUploading] = useState(false);
 
   // Load document from sessionStorage
   useEffect(() => {
@@ -51,16 +56,56 @@ export default function DocumentoOpcionesPage() {
     }
   }, [router]);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!document) return;
+    setIsUploading(true);
 
-    // Save options to sessionStorage
-    sessionStorage.setItem("documentIsColor", isColor.toString());
-    sessionStorage.setItem("selectedPaper", selectedPaper);
-    sessionStorage.setItem("sheetsCount", (document.pageCount || 1).toString());
+    try {
+      // 1. Leer PDF procesado de sessionStorage
+      const pdfBase64 = sessionStorage.getItem("documentPdfData");
+      if (!pdfBase64) {
+        throw new Error("No se encontró el documento. Por favor vuelve a subirlo.");
+      }
 
-    // Navigate to summary
-    router.push("/resumen?type=document");
+      // 2. Convertir a blob
+      const pdfBuffer = base64ToArrayBuffer(pdfBase64);
+      const blob = new Blob([pdfBuffer], { type: "application/pdf" });
+
+      // 3. Generar path único
+      let sessionId = sessionStorage.getItem("uploadSessionId");
+      if (!sessionId) {
+        sessionId = crypto.randomUUID();
+        sessionStorage.setItem("uploadSessionId", sessionId);
+      }
+      const storagePath = `${sessionId}/${crypto.randomUUID()}.pdf`;
+
+      // 4. Subir a Supabase Storage
+      const supabase = createClient();
+      const { error } = await supabase.storage
+        .from("originals")
+        .upload(storagePath, blob, {
+          contentType: "application/pdf",
+          upsert: false,
+        });
+
+      if (error) {
+        console.error("Storage upload error:", error);
+        throw new Error("Error al subir el documento");
+      }
+
+      // 5. Guardar path y opciones en sessionStorage
+      sessionStorage.setItem("documentStoragePath", storagePath);
+      sessionStorage.setItem("documentIsColor", isColor.toString());
+      sessionStorage.setItem("selectedPaper", selectedPaper);
+      sessionStorage.setItem("sheetsCount", (document.pageCount || 1).toString());
+
+      // 6. Navegar al resumen
+      router.push("/resumen?type=document");
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      toast.error(error instanceof Error ? error.message : "Error al subir documento. Intenta de nuevo.");
+      setIsUploading(false);
+    }
   };
 
   if (!document) {
@@ -316,14 +361,25 @@ export default function DocumentoOpcionesPage() {
       <section className="px-4 pb-8 mt-auto bg-white border-t border-gray-100 pt-4">
         <Button
           onClick={handleContinue}
+          disabled={isUploading}
           className={cn(
             "w-full h-14 text-lg font-semibold rounded-2xl transition-all",
-            "bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/30"
+            "bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/30",
+            isUploading && "opacity-80 cursor-not-allowed"
           )}
         >
-          <CheckCircleIcon className="w-5 h-5 mr-2" />
-          Ver resumen
-          <ChevronRightIcon className="w-5 h-5 ml-2" />
+          {isUploading ? (
+            <>
+              <LoaderIcon className="w-5 h-5 mr-2 animate-spin" />
+              Subiendo documento...
+            </>
+          ) : (
+            <>
+              <CheckCircleIcon className="w-5 h-5 mr-2" />
+              Ver resumen
+              <ChevronRightIcon className="w-5 h-5 ml-2" />
+            </>
+          )}
         </Button>
       </section>
     </div>

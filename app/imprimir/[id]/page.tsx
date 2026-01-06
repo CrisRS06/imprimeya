@@ -230,9 +230,13 @@ export default function PrintPage({
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4 bg-white">
         <AlertCircleIcon className="w-12 h-12 text-amber-500" />
-        <p className="text-amber-600">Layout no encontrado: {data.print.layoutId}</p>
+        <p className="text-amber-600">
+          Layout no encontrado: {data.print.layoutId || "(sin especificar)"}
+        </p>
         <p className="text-gray-500 text-sm">
-          Este pedido puede haber sido creado con un layout antiguo.
+          {data.print.layoutId
+            ? "Este pedido puede haber sido creado con un layout antiguo."
+            : "Este pedido se creo sin seleccionar un layout."}
         </p>
         <Button onClick={() => router.back()}>Volver</Button>
       </div>

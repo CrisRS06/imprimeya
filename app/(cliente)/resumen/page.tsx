@@ -176,6 +176,14 @@ function ResumenPageContent() {
     hapticFeedback("medium");
 
     try {
+      // Validar layout para fotos - previene ordenes sin layoutId
+      if (productType === "photo" && !selectedLayout) {
+        toast.error("Debes seleccionar un layout primero");
+        router.push("/fotos/layout");
+        setIsSubmitting(false);
+        return;
+      }
+
       // Get storage paths (not just names) for the images
       // storagePath es el path completo en Supabase Storage
       // Validacion estricta: TODAS las fotos deben tener storagePath

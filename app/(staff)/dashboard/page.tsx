@@ -60,8 +60,6 @@ export default function StaffDashboardPage() {
 
           if (newIds.length > 0) {
             setNewOrderIds((prev) => new Set([...prev, ...newIds]));
-            // Sonido de notificacion
-            playNotificationSound();
           }
         }
 
@@ -89,19 +87,6 @@ export default function StaffDashboardPage() {
 
     return () => clearInterval(interval);
   }, [fetchOrders]);
-
-  // Sonido de notificacion
-  const playNotificationSound = () => {
-    try {
-      const audio = new Audio("/sounds/notification.mp3");
-      audio.volume = 0.5;
-      audio.play().catch(() => {
-        // Ignorar si no puede reproducir
-      });
-    } catch {
-      // Ignorar errores de audio
-    }
-  };
 
   const handleOrderClick = (order: Order) => {
     // Quitar de "nuevos"

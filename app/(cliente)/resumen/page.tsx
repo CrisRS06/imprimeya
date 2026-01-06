@@ -190,7 +190,12 @@ function ResumenPageContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Error creando pedido");
+        // Mostrar detalles de validación si existen
+        const errorMsg = data.details
+          ? `${data.error}: ${data.details.join(", ")}`
+          : data.error || "Error creando pedido";
+        console.error("Order validation failed:", data);
+        throw new Error(errorMsg);
       }
 
       // Show success animation

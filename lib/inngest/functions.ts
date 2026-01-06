@@ -231,9 +231,37 @@ export const cleanupOldFiles = inngest.createFunction(
       return { deleted: paths.length };
     });
 
+    // Limpiar PDFs
+    const pdfsResult = await step.run("cleanup-pdfs", async () => {
+      const supabase = await getSupabaseAdmin();
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
+
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("pdf_path")
+        .eq("status", "delivered")
+        .lt("delivered_at", cutoffDate.toISOString())
+        .not("pdf_path", "is", null);
+
+      if (!orders) return { deleted: 0 };
+
+      const paths = orders
+        .map((o) => o.pdf_path)
+        .filter(Boolean) as string[];
+
+      if (paths.length) {
+        await supabase.storage.from("pdfs").remove(paths);
+      }
+
+      log.info("Cleaned up PDFs", { deleted: paths.length });
+      return { deleted: paths.length };
+    });
+
     log.info("Cleanup job completed", {
       originalsDeleted: originalsResult.deleted,
       processedDeleted: processedResult.deleted,
+      pdfsDeleted: pdfsResult.deleted,
     });
 
     return { success: true };

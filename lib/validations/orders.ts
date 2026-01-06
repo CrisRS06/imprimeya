@@ -9,16 +9,17 @@ export const ProductTypeSchema = z.enum([
   "poster",
 ]);
 
-// Valid paper types
+// Valid paper types (sincronizado con lib/config/papers.ts)
 export const PaperTypeSchema = z.enum([
   "bond_normal",
-  "bond",
   "opalina",
   "cartulina_lino",
-  "lino",
-  "sticker",
   "sticker_semigloss",
   "fotografico",
+  // Legacy values para compatibilidad
+  "bond",
+  "lino",
+  "sticker",
 ]);
 
 // Valid order statuses
@@ -60,8 +61,12 @@ export const CreateOrderSchema = z.object({
     .int("quantity debe ser entero")
     .min(1, "quantity mínimo 1")
     .max(100, "quantity máximo 100"),
+  // Acepta URLs completas O paths de storage
+  // Permisivo para aceptar varios formatos de path
   originalImages: z
-    .array(z.string().url().or(z.string().regex(/^[a-f0-9-]+\/[a-f0-9-]+\.[a-z]+$/i)))
+    .array(
+      z.string().min(1, "Path de imagen vacío")
+    )
     .min(1, "Se requiere al menos una imagen"),
   notes: z
     .string()

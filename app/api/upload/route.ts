@@ -3,9 +3,10 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { v4 as uuidv4 } from "uuid";
 import { checkRateLimit, getClientId, RATE_LIMITS } from "@/lib/utils/rate-limiter";
 import { log, generateRequestId } from "@/lib/logger";
+import { MAX_UPLOAD_SIZE, ALLOWED_IMAGE_TYPES } from "@/lib/constants";
 
-// Tamano maximo permitido (10MB)
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+// Usar límite centralizado (4MB para Vercel Hobby)
+const MAX_FILE_SIZE = MAX_UPLOAD_SIZE;
 
 // Tipos MIME permitidos
 const ALLOWED_TYPES = [

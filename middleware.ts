@@ -104,9 +104,9 @@ export async function middleware(request: NextRequest) {
     }
 
     // Check if user has staff role via user metadata
+    // NOTA: Solo verificar metadata, NO dominio de email (inseguro)
     const isStaff = user.user_metadata?.role === "staff" ||
-                    user.user_metadata?.is_staff === true ||
-                    user.email?.endsWith("@simple.cr"); // Domain-based staff
+                    user.user_metadata?.is_staff === true;
 
     if (!isStaff) {
       if (isStaffApiRoute || isStaffApiMutation) {
@@ -125,8 +125,7 @@ export async function middleware(request: NextRequest) {
   // Redirect authenticated staff users away from login page
   if (isStaffLoginRoute && user) {
     const isStaff = user.user_metadata?.role === "staff" ||
-                    user.user_metadata?.is_staff === true ||
-                    user.email?.endsWith("@simple.cr");
+                    user.user_metadata?.is_staff === true;
     if (isStaff) {
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";

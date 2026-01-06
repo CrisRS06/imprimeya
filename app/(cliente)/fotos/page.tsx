@@ -17,8 +17,10 @@ import { Button } from "@/components/ui/button";
 import { useOrder } from "@/lib/context/OrderContext";
 import { validateImageResolution, type ValidationResult } from "@/lib/utils/image-validation";
 import { convertHeicToJpeg, isHeicFile } from "@/lib/utils/heic-converter";
+import { compressImage, formatFileSize } from "@/lib/utils/image-compressor";
 import { QualityPulse } from "@/components/feedback/QualityIndicator";
 import { ProcessingOverlay } from "@/components/feedback/LoadingStates";
+import { MAX_UPLOAD_SIZE, UPLOAD_TIMEOUT_MS, MAX_FILES_PER_SESSION } from "@/lib/constants";
 
 interface UploadedFile {
   id: string;
@@ -31,7 +33,7 @@ interface UploadedFile {
   error?: string;
 }
 
-const MAX_FILES = 20;
+const MAX_FILES = MAX_FILES_PER_SESSION;
 
 export default function FotosPage() {
   const router = useRouter();
@@ -54,48 +56,103 @@ export default function FotosPage() {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     let processedFile = file;
 
+    // Paso 1: Convertir HEIC si es necesario
     if (isHeicFile(file)) {
       try {
         processedFile = await convertHeicToJpeg(file);
       } catch {
+        toast.error(`${file.name}: Error al convertir formato HEIC`);
         return {
           id,
           file,
           preview: "",
           status: "error",
-          error: "Error al convertir formato HEIC",
+          error: "Error al convertir formato HEIC. Intenta con otro archivo.",
         };
       }
     }
 
+    // Paso 2: Comprimir si es necesario (límite de Vercel: 4.5MB)
+    if (processedFile.size > MAX_UPLOAD_SIZE) {
+      const compressionResult = await compressImage(processedFile);
+
+      if (!compressionResult.success) {
+        toast.error(`${file.name}: ${compressionResult.error}`);
+        return {
+          id,
+          file,
+          preview: "",
+          status: "error",
+          error: compressionResult.error || "No se pudo comprimir la imagen",
+        };
+      }
+
+      // Compresión exitosa
+      processedFile = compressionResult.file;
+      console.log(
+        `Imagen comprimida: ${formatFileSize(compressionResult.originalSize)} → ${formatFileSize(compressionResult.compressedSize)}`
+      );
+    }
+
+    // Paso 3: Validar resolución para impresión
     const preview = URL.createObjectURL(processedFile);
     const validation = await validateImageResolution(processedFile);
 
+    // Paso 4: Subir a servidor con timeout
     let storagePath: string | undefined;
     let publicUrl: string | undefined;
+    let uploadError: string | undefined;
 
     try {
       const formData = new FormData();
       formData.append("file", processedFile);
       formData.append("sessionId", sessionStorage.getItem("uploadSessionId") || id);
 
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
+      // Crear AbortController para timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
 
-      if (response.ok) {
-        const data = await response.json();
-        storagePath = data.data.path;
-        publicUrl = data.data.publicUrl;
+      try {
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+          signal: controller.signal,
+        });
 
-        if (data.data.sessionId) {
-          sessionStorage.setItem("uploadSessionId", data.data.sessionId);
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          const data = await response.json();
+          storagePath = data.data.path;
+          publicUrl = data.data.publicUrl;
+
+          if (data.data.sessionId) {
+            sessionStorage.setItem("uploadSessionId", data.data.sessionId);
+          }
+        } else {
+          // Manejar errores HTTP específicos
+          const errorData = await response.json().catch(() => ({}));
+          if (response.status === 413) {
+            uploadError = "Imagen muy grande para el servidor";
+          } else if (response.status === 429) {
+            uploadError = "Demasiadas subidas. Espera un momento.";
+          } else {
+            uploadError = errorData.error || "Error del servidor";
+          }
+          toast.error(`${file.name}: ${uploadError}`);
         }
-      } else {
-        console.error("Error uploading to storage");
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+
+        if (fetchError instanceof Error && fetchError.name === "AbortError") {
+          uploadError = "La subida tardó demasiado. Verifica tu conexión.";
+        } else {
+          uploadError = "Error de conexión. Verifica tu internet.";
+        }
+        toast.error(`${file.name}: ${uploadError}`);
       }
     } catch (err) {
+      uploadError = "Error inesperado al subir";
       console.error("Upload error:", err);
     }
 
@@ -107,7 +164,7 @@ export default function FotosPage() {
       publicUrl,
       status: storagePath ? "done" : "error",
       validation,
-      error: storagePath ? undefined : "Error al subir imagen",
+      error: uploadError,
     };
   }, []);
 

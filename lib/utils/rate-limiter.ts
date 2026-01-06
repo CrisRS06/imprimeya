@@ -1,6 +1,19 @@
 /**
- * In-memory rate limiter for API routes
- * Simple sliding window implementation without external dependencies
+ * Rate limiter básico para API routes
+ *
+ * NOTA: Este rate limiter usa memoria local, lo cual tiene limitaciones en Vercel:
+ * - Cada instancia serverless tiene su propia memoria
+ * - Los deploys reinician la memoria
+ * - No es 100% efectivo contra ataques distribuidos
+ *
+ * Para una solución robusta en producción de alto tráfico, considerar:
+ * - Vercel KV (Redis): https://vercel.com/docs/storage/vercel-kv
+ * - Upstash Redis: https://upstash.com/
+ *
+ * El rate limiter actual es suficiente para:
+ * - Prevenir abuso accidental
+ * - Protección básica contra scripts simples
+ * - Aplicaciones de bajo/medio tráfico
  */
 
 interface RateLimitEntry {
@@ -8,9 +21,10 @@ interface RateLimitEntry {
   resetTime: number;
 }
 
+// Store en memoria (limitación: no persiste entre instancias)
 const store = new Map<string, RateLimitEntry>();
 
-// Clean up old entries every 5 minutes
+// Limpiar entradas expiradas periódicamente
 if (typeof setInterval !== "undefined") {
   setInterval(() => {
     const now = Date.now();
@@ -19,7 +33,7 @@ if (typeof setInterval !== "undefined") {
         store.delete(key);
       }
     }
-  }, 5 * 60 * 1000);
+  }, 60 * 1000); // Cada minuto
 }
 
 interface RateLimitConfig {
@@ -117,12 +131,13 @@ function simpleHash(str: string): string {
   return Math.abs(hash).toString(36);
 }
 
-// Preset configurations for different endpoints
+// Configuraciones de rate limit por endpoint
+// Límites generosos para usuarios legítimos, pero previenen abuso obvio
 export const RATE_LIMITS = {
-  // Orders: 5 per minute per IP
-  orders: { limit: 5, windowMs: 60 * 1000 },
-  // Upload: 10 per minute per IP
-  upload: { limit: 10, windowMs: 60 * 1000 },
-  // General API: 60 per minute per IP
-  api: { limit: 60, windowMs: 60 * 1000 },
+  // Orders: 10 por minuto (usuario normal crea 1-2)
+  orders: { limit: 10, windowMs: 60 * 1000 },
+  // Upload: 30 por minuto (usuario puede subir 20 fotos)
+  upload: { limit: 30, windowMs: 60 * 1000 },
+  // General API: 120 por minuto
+  api: { limit: 120, windowMs: 60 * 1000 },
 } as const;

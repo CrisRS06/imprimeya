@@ -7,7 +7,8 @@ const isDev = process.env.NODE_ENV === "development";
  * Uses pino for high-performance logging
  */
 export const logger = pino({
-  level: isDev ? "debug" : "warn",
+  // En producción usar "info" para mejor observabilidad
+  level: process.env.LOG_LEVEL || (isDev ? "debug" : "info"),
   transport: isDev
     ? {
         target: "pino-pretty",

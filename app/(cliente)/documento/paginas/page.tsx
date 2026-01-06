@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { motion } from "framer-motion";
+import { Grid } from "react-window";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -37,20 +37,141 @@ if (typeof window !== "undefined") {
   });
 }
 
+// Constants for virtualization
+const COLUMNS = 3;
+const ITEM_WIDTH = 110;
+const ITEM_HEIGHT = 155;
+const GAP = 12;
+
+// Memoized thumbnail component for performance
+interface PageThumbnailProps {
+  pageNum: number;
+  isSelected: boolean;
+  onToggle: (pageNum: number) => void;
+}
+
+const PageThumbnail = memo(
+  function PageThumbnail({ pageNum, isSelected, onToggle }: PageThumbnailProps) {
+    return (
+      <button
+        onClick={() => onToggle(pageNum)}
+        className={cn(
+          "relative w-full h-full rounded-lg overflow-hidden border-2 transition-colors",
+          "focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2",
+          isSelected
+            ? "border-emerald-500 shadow-lg shadow-emerald-500/20"
+            : "border-gray-200 hover:border-gray-300"
+        )}
+      >
+        {/* Checkbox indicator */}
+        <div
+          className={cn(
+            "absolute top-1.5 right-1.5 w-5 h-5 rounded flex items-center justify-center z-10 transition-colors",
+            isSelected
+              ? "bg-emerald-500"
+              : "bg-white border border-gray-300"
+          )}
+        >
+          {isSelected && <CheckIcon className="w-3 h-3 text-white" />}
+        </div>
+
+        {/* PDF Thumbnail */}
+        <div className="w-full h-full bg-white flex items-center justify-center overflow-hidden">
+          <Page
+            pageNumber={pageNum}
+            width={80}
+            renderTextLayer={false}
+            renderAnnotationLayer={false}
+            className="pointer-events-none"
+          />
+        </div>
+
+        {/* Page number */}
+        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent py-1.5">
+          <span className="text-white text-xs font-medium">{pageNum}</span>
+        </div>
+
+        {/* Selection overlay */}
+        {!isSelected && (
+          <div className="absolute inset-0 bg-gray-100/40 pointer-events-none" />
+        )}
+      </button>
+    );
+  },
+  (prev, next) =>
+    prev.pageNum === next.pageNum && prev.isSelected === next.isSelected
+);
+
+// Grid cell custom props (passed via cellProps)
+interface GridCellCustomProps {
+  numPages: number;
+  selectedPages: Set<number>;
+  togglePage: (pageNum: number) => void;
+}
+
+// Grid cell renderer for react-window v2
+// Props from Grid: ariaAttributes, columnIndex, rowIndex, style
+// Props from cellProps: numPages, selectedPages, togglePage
+function GridCell(props: {
+  ariaAttributes: { "aria-colindex": number; role: "gridcell" };
+  columnIndex: number;
+  rowIndex: number;
+  style: React.CSSProperties;
+} & GridCellCustomProps) {
+  const { columnIndex, rowIndex, style, numPages, selectedPages, togglePage } = props;
+  const pageNum = rowIndex * COLUMNS + columnIndex + 1;
+
+  if (pageNum > numPages) {
+    return <div style={style} />;
+  }
+
+  const isSelected = selectedPages.has(pageNum);
+
+  return (
+    <div style={style} className="p-1.5">
+      <PageThumbnail
+        pageNum={pageNum}
+        isSelected={isSelected}
+        onToggle={togglePage}
+      />
+    </div>
+  );
+}
+
 export default function SeleccionarPaginasPage() {
   const router = useRouter();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [numPages, setNumPages] = useState(0);
   const [isClient, setIsClient] = useState(false);
-
-  // Ensure we're on the client
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [selectedPages, setSelectedPages] = useState<Set<number>>(new Set());
   const [pdfData, setPdfData] = useState<ArrayBuffer | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Ensure we're on the client
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Measure container size for virtualization
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const updateSize = () => {
+      if (containerRef.current) {
+        setContainerSize({
+          width: containerRef.current.offsetWidth,
+          height: containerRef.current.offsetHeight,
+        });
+      }
+    };
+
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, []);
 
   // Load PDF from sessionStorage
   useEffect(() => {
@@ -70,15 +191,15 @@ export default function SeleccionarPaginasPage() {
     setLoading(false);
   }, []);
 
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+  const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
     // Select all pages by default
     setSelectedPages(new Set(Array.from({ length: numPages }, (_, i) => i + 1)));
-  };
+  }, []);
 
-  const onDocumentLoadError = () => {
+  const onDocumentLoadError = useCallback(() => {
     setError("Error al cargar el PDF. Intenta con otro archivo.");
-  };
+  }, []);
 
   const togglePage = useCallback((pageNum: number) => {
     setSelectedPages((prev) => {
@@ -130,6 +251,12 @@ export default function SeleccionarPaginasPage() {
       setProcessing(false);
     }
   };
+
+  // Calculate grid dimensions
+  const columnWidth = containerSize.width > 0
+    ? Math.floor((containerSize.width - GAP) / COLUMNS)
+    : ITEM_WIDTH;
+  const rowCount = Math.ceil(numPages / COLUMNS);
 
   if (loading) {
     return (
@@ -216,8 +343,8 @@ export default function SeleccionarPaginasPage() {
         </div>
       </div>
 
-      {/* Page grid */}
-      <main className="flex-1 px-4 pb-4 overflow-auto">
+      {/* Page grid - Virtualized */}
+      <main ref={containerRef} className="flex-1 px-2 pb-4 overflow-hidden">
         {isClient && pdfData && (
           <Document
             file={{ data: pdfData }}
@@ -229,66 +356,21 @@ export default function SeleccionarPaginasPage() {
               </div>
             }
           >
-            <div className="grid grid-cols-3 gap-3">
-              {Array.from({ length: numPages }, (_, i) => {
-                const pageNum = i + 1;
-                const isSelected = selectedPages.has(pageNum);
-                return (
-                  <motion.button
-                    key={pageNum}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: i * 0.03 }}
-                    onClick={() => togglePage(pageNum)}
-                    className={cn(
-                      "relative aspect-[8.5/11] rounded-lg overflow-hidden border-2 transition-all",
-                      "focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2",
-                      isSelected
-                        ? "border-emerald-500 shadow-lg shadow-emerald-500/20"
-                        : "border-gray-200 hover:border-gray-300"
-                    )}
-                    style={{ minHeight: 120 }}
-                  >
-                    {/* Checkbox indicator */}
-                    <div
-                      className={cn(
-                        "absolute top-1.5 right-1.5 w-6 h-6 rounded-md flex items-center justify-center z-10 transition-colors",
-                        isSelected
-                          ? "bg-emerald-500"
-                          : "bg-white border border-gray-300"
-                      )}
-                    >
-                      {isSelected && (
-                        <CheckIcon className="w-4 h-4 text-white" />
-                      )}
-                    </div>
-
-                    {/* PDF Thumbnail */}
-                    <div className="w-full h-full bg-white flex items-center justify-center">
-                      <Page
-                        pageNumber={pageNum}
-                        width={100}
-                        renderTextLayer={false}
-                        renderAnnotationLayer={false}
-                        className="pointer-events-none"
-                      />
-                    </div>
-
-                    {/* Page number */}
-                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent py-2">
-                      <span className="text-white text-sm font-medium">
-                        {pageNum}
-                      </span>
-                    </div>
-
-                    {/* Selection overlay */}
-                    {!isSelected && (
-                      <div className="absolute inset-0 bg-gray-100/50 pointer-events-none" />
-                    )}
-                  </motion.button>
-                );
-              })}
-            </div>
+            {containerSize.width > 0 && containerSize.height > 0 && numPages > 0 && (
+              <Grid
+                cellComponent={GridCell}
+                cellProps={{
+                  numPages,
+                  selectedPages,
+                  togglePage,
+                }}
+                columnCount={COLUMNS}
+                columnWidth={columnWidth}
+                rowCount={rowCount}
+                rowHeight={ITEM_HEIGHT}
+                style={{ width: containerSize.width, height: containerSize.height }}
+              />
+            )}
           </Document>
         )}
       </main>

@@ -384,7 +384,7 @@ export default function PrintPage({
               </div>
             </div>
 
-            {data.order.status === "pending" && (
+            {data.order.status !== "delivered" && (
               <Button
                 onClick={handleMarkDelivered}
                 disabled={markingDelivered}

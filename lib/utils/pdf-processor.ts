@@ -37,6 +37,67 @@ export async function getPdfPageCount(pdfBytes: ArrayBuffer): Promise<number> {
 }
 
 /**
+ * Parses a page range string into an array of page numbers
+ * @param input - Range string like "1-5, 8, 10-12"
+ * @param maxPages - Maximum valid page number
+ * @returns Array of 1-indexed page numbers sorted ascending
+ */
+export function parsePageRanges(input: string, maxPages: number): number[] {
+  if (!input.trim()) return [];
+
+  const selected = new Set<number>();
+  const parts = input.split(",").map((s) => s.trim());
+
+  for (const part of parts) {
+    if (part.includes("-")) {
+      const [startStr, endStr] = part.split("-");
+      const start = Number(startStr);
+      const end = Number(endStr);
+      if (!isNaN(start) && !isNaN(end)) {
+        for (let i = Math.max(1, start); i <= Math.min(end, maxPages); i++) {
+          selected.add(i);
+        }
+      }
+    } else {
+      const page = Number(part);
+      if (!isNaN(page) && page >= 1 && page <= maxPages) {
+        selected.add(page);
+      }
+    }
+  }
+
+  return Array.from(selected).sort((a, b) => a - b);
+}
+
+/**
+ * Converts an array of page numbers to a compact range string
+ * @param pages - Array of page numbers [1, 2, 3, 5, 7, 8, 9]
+ * @returns Compact string like "1-3, 5, 7-9"
+ */
+export function pagesToRangeString(pages: number[]): string {
+  if (pages.length === 0) return "";
+
+  const sorted = [...pages].sort((a, b) => a - b);
+  const ranges: string[] = [];
+  let start = sorted[0];
+  let end = sorted[0];
+
+  for (let i = 1; i <= sorted.length; i++) {
+    if (i < sorted.length && sorted[i] === end + 1) {
+      end = sorted[i];
+    } else {
+      ranges.push(start === end ? String(start) : `${start}-${end}`);
+      if (i < sorted.length) {
+        start = sorted[i];
+        end = sorted[i];
+      }
+    }
+  }
+
+  return ranges.join(", ");
+}
+
+/**
  * Scales all pages of a PDF to fit letter size (8.5x11") while maintaining aspect ratio
  * Content is centered on the page
  */

@@ -40,7 +40,6 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-dropzone": "^14.3.8",
-    "react-pdf": "^10.3.0",
     "react-window": "^2.2.4",
     "serwist": "^9.4.2",
     "smartcrop": "^2.0.5",

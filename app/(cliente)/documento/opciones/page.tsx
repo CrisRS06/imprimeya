@@ -122,7 +122,16 @@ export default function DocumentoOpcionesPage() {
       <header className="px-4 pt-6 pb-4">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => router.push("/documento")}
+            onClick={() => {
+              // Clear document state to prevent stale data
+              sessionStorage.removeItem("documentPdfData");
+              sessionStorage.removeItem("uploadedDocument");
+              sessionStorage.removeItem("documentStoragePath");
+              sessionStorage.removeItem("documentIsColor");
+              sessionStorage.removeItem("selectedPaper");
+              sessionStorage.removeItem("sheetsCount");
+              router.push("/documento");
+            }}
             className="p-2 -ml-2 text-gray-600 hover:text-gray-900 transition-colors"
           >
             <ArrowLeftIcon className="w-5 h-5" />

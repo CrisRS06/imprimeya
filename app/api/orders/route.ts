@@ -143,6 +143,18 @@ export async function POST(request: NextRequest) {
     const body = parseResult.data;
     const supabase = await createServiceClient();
 
+    // Validate that originalImages paths are valid and not empty strings
+    const invalidPaths = body.originalImages.filter(
+      (path: string) => !path || typeof path !== "string" || path.trim() === ""
+    );
+    if (invalidPaths.length > 0) {
+      log.warn("Invalid image paths in order", { invalidPaths, requestId });
+      return NextResponse.json(
+        { error: "Hay imagenes sin subir correctamente. Por favor vuelve a subirlas." },
+        { status: 400 }
+      );
+    }
+
     log.info("Creating order", { productType: body.productType, quantity: body.quantity, requestId });
 
     // Generar codigo unico

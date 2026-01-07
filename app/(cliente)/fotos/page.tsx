@@ -32,7 +32,10 @@ interface UploadedFile {
   status: "converting" | "processing" | "uploading" | "done" | "error";
   validation?: ValidationResult;
   error?: string;
+  retryCount?: number;
 }
+
+const MAX_RETRIES = 3;
 
 const MAX_FILES = MAX_FILES_PER_SESSION;
 
@@ -71,6 +74,7 @@ export default function FotosPage() {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Cleanup blob URLs on unmount
   useEffect(() => {
     return () => {
       files.forEach((f) => {
@@ -81,6 +85,30 @@ export default function FotosPage() {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-save uploaded photos to sessionStorage (prevents data loss on navigation)
+  useEffect(() => {
+    const successfulUploads = files.filter(
+      (f) => f.status === "done" && f.storagePath && f.publicUrl
+    );
+
+    if (successfulUploads.length > 0) {
+      sessionStorage.setItem(
+        "uploadedPhotos",
+        JSON.stringify(
+          successfulUploads.map((f) => ({
+            id: f.id,
+            preview: f.publicUrl || f.preview,
+            name: f.file.name,
+            storagePath: f.storagePath,
+            publicUrl: f.publicUrl,
+            validation: f.validation,
+            quantity: 1,
+          }))
+        )
+      );
+    }
+  }, [files]);
 
   const processFile = useCallback(async (file: File): Promise<UploadedFile> => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -273,11 +301,18 @@ export default function FotosPage() {
     const fileToRetry = files.find((f) => f.id === fileId);
     if (!fileToRetry?.file) return;
 
-    // Marcar como procesando
+    // Check retry limit
+    const currentRetries = fileToRetry.retryCount || 0;
+    if (currentRetries >= MAX_RETRIES) {
+      toast.error(`Limite de reintentos alcanzado (${MAX_RETRIES}). Elimina la imagen e intenta de nuevo.`);
+      return;
+    }
+
+    // Marcar como procesando e incrementar contador
     setFiles((prev) =>
       prev.map((f) =>
         f.id === fileId
-          ? { ...f, status: "processing" as const, error: undefined }
+          ? { ...f, status: "processing" as const, error: undefined, retryCount: currentRetries + 1 }
           : f
       )
     );
@@ -286,11 +321,11 @@ export default function FotosPage() {
       // Re-ejecutar el pipeline completo
       const processed = await processFile(fileToRetry.file);
 
-      // Actualizar con el resultado, manteniendo el ID original
+      // Actualizar con el resultado, manteniendo el ID original y el contador
       setFiles((prev) =>
         prev.map((f) =>
           f.id === fileId
-            ? { ...processed, id: fileId }
+            ? { ...processed, id: fileId, retryCount: currentRetries + 1 }
             : f
         )
       );
@@ -300,10 +335,14 @@ export default function FotosPage() {
       }
     } catch (error) {
       console.error("Retry error:", error);
+      // Revoke URL on error to prevent memory leak
+      if (fileToRetry.preview && fileToRetry.preview.startsWith("blob:")) {
+        URL.revokeObjectURL(fileToRetry.preview);
+      }
       setFiles((prev) =>
         prev.map((f) =>
           f.id === fileId
-            ? { ...f, status: "error" as const, error: "Error al reintentar. Intenta de nuevo." }
+            ? { ...f, status: "error" as const, error: "Error al reintentar. Intenta de nuevo.", retryCount: currentRetries + 1 }
             : f
         )
       );
@@ -324,7 +363,7 @@ export default function FotosPage() {
   });
 
   const canContinue =
-    files.length > 0 && files.every((f) => f.status === "done" && f.storagePath);
+    files.length > 0 && files.every((f) => f.status === "done" && f.storagePath && f.storagePath !== "");
 
   const handleContinue = () => {
     clearImages();
@@ -522,10 +561,10 @@ export default function FotosPage() {
               </div>
 
               <p className="text-sm text-gray-600 font-medium">
-                {files.length} {files.length === 1 ? "imagen" : "imágenes"} seleccionadas
+                {files.length} de {MAX_FILES} {files.length === 1 ? "imagen" : "imágenes"}
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                Toca para agregar mas
+                {files.length < MAX_FILES ? "Toca para agregar mas" : "Limite alcanzado"}
               </p>
             </div>
           )}

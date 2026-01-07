@@ -12,6 +12,10 @@ import {
   parsePageRanges,
   pagesToRangeString,
   processPdfForPrint,
+  EncryptedPdfError,
+  InvalidBase64Error,
+  PdfScalingError,
+  PageExtractionError,
 } from "@/lib/utils/pdf-processor";
 import {
   ArrowLeftIcon,
@@ -109,8 +113,15 @@ export default function SeleccionarPaginasPage() {
         const allPages = new Set(Array.from({ length: pageCount }, (_, i) => i + 1));
         setSelectedPages(allPages);
         setRangeInput(pagesToRangeString(Array.from(allPages)));
-      } catch {
-        setError("Error al cargar el documento");
+      } catch (err) {
+        // Handle specific error types with descriptive messages
+        if (err instanceof EncryptedPdfError) {
+          setError(err.message);
+        } else if (err instanceof InvalidBase64Error) {
+          setError(err.message);
+        } else {
+          setError("Error al cargar el documento. Verifica que el archivo no este corrupto.");
+        }
       }
       setLoading(false);
     };
@@ -178,7 +189,18 @@ export default function SeleccionarPaginasPage() {
 
       router.push("/documento/opciones");
     } catch (err) {
-      setError("Error al procesar el PDF. Intenta con otro archivo.");
+      // Handle specific error types with descriptive messages
+      if (err instanceof EncryptedPdfError) {
+        setError(err.message);
+      } else if (err instanceof InvalidBase64Error) {
+        setError(err.message);
+      } else if (err instanceof PdfScalingError) {
+        setError(err.message);
+      } else if (err instanceof PageExtractionError) {
+        setError(err.message);
+      } else {
+        setError("Error al procesar el PDF. Intenta con otro archivo.");
+      }
       console.error(err);
     } finally {
       setProcessing(false);

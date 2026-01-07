@@ -17,6 +17,7 @@ import { useDropzone, FileRejection } from "react-dropzone";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useOrder } from "@/lib/context/OrderContext";
+import { getPdfPageCount, EncryptedPdfError } from "@/lib/utils/pdf-processor";
 
 interface UploadedDocument {
   id: string;
@@ -68,19 +69,44 @@ export default function DocumentoPage() {
       };
     }
 
-    // For now, we'll set a placeholder page count
-    // In a full implementation, we'd use pdf-lib to extract page count
+    // Validar y obtener información del PDF
     let pageCount: number | null = null;
 
-    // Get page count for PDFs using a simple approach
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const text = new TextDecoder("latin1").decode(arrayBuffer);
-      // Simple regex to count /Type /Page occurrences (rough estimate)
-      const matches = text.match(/\/Type\s*\/Page[^s]/g);
-      pageCount = matches ? matches.length : 1;
-    } catch {
-      pageCount = 1; // Default to 1 if we can't determine
+      const headerBytes = new Uint8Array(arrayBuffer.slice(0, 5));
+      const header = String.fromCharCode(...headerBytes);
+
+      // Validar firma PDF (%PDF-)
+      if (!header.startsWith("%PDF-")) {
+        return {
+          id,
+          file,
+          name: file.name,
+          type: "pdf",
+          size: file.size,
+          pageCount: null,
+          status: "error",
+          error: "Archivo PDF invalido o corrupto",
+        };
+      }
+
+      // Contar páginas usando pdf-lib (más confiable que regex)
+      pageCount = await getPdfPageCount(arrayBuffer);
+    } catch (err) {
+      if (err instanceof EncryptedPdfError) {
+        return {
+          id,
+          file,
+          name: file.name,
+          type: "pdf",
+          size: file.size,
+          pageCount: null,
+          status: "error",
+          error: err.message,
+        };
+      }
+      pageCount = 1; // Default si no se puede determinar
     }
 
     return {
@@ -136,30 +162,39 @@ export default function DocumentoPage() {
   const handleContinue = async () => {
     if (!document) return;
 
-    setProductType("document");
+    // Show processing state during base64 conversion (can freeze UI on large files)
+    setIsProcessing(true);
 
-    // Convert file to base64 for storage
-    const arrayBuffer = await document.file.arrayBuffer();
-    const base64 = btoa(
-      new Uint8Array(arrayBuffer).reduce(
-        (data, byte) => data + String.fromCharCode(byte),
-        ""
-      )
-    );
+    try {
+      setProductType("document");
 
-    // Save PDF data and metadata to sessionStorage
-    sessionStorage.setItem("documentPdfData", base64);
-    sessionStorage.setItem(
-      "uploadedDocument",
-      JSON.stringify({
-        name: document.name,
-        type: document.type,
-        size: document.size,
-        pageCount: document.pageCount,
-      })
-    );
+      // Convert file to base64 for storage
+      const arrayBuffer = await document.file.arrayBuffer();
+      const base64 = btoa(
+        new Uint8Array(arrayBuffer).reduce(
+          (data, byte) => data + String.fromCharCode(byte),
+          ""
+        )
+      );
 
-    router.push("/documento/paginas");
+      // Save PDF data and metadata to sessionStorage
+      sessionStorage.setItem("documentPdfData", base64);
+      sessionStorage.setItem(
+        "uploadedDocument",
+        JSON.stringify({
+          name: document.name,
+          type: document.type,
+          size: document.size,
+          pageCount: document.pageCount,
+        })
+      );
+
+      router.push("/documento/paginas");
+    } catch (err) {
+      console.error("Error preparing document:", err);
+      toast.error("Error al preparar el documento. Intenta de nuevo.");
+      setIsProcessing(false);
+    }
   };
 
   return (

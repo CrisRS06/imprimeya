@@ -5,15 +5,41 @@ const LETTER_WIDTH = 612; // 8.5 inches
 const LETTER_HEIGHT = 792; // 11 inches
 
 /**
+ * Error específico para base64 inválido
+ */
+export class InvalidBase64Error extends Error {
+  constructor() {
+    super("El documento guardado esta corrupto. Por favor vuelve a subirlo.");
+    this.name = "InvalidBase64Error";
+  }
+}
+
+/**
  * Converts base64 string to ArrayBuffer
+ * @throws {InvalidBase64Error} Si el base64 es inválido
  */
 export function base64ToArrayBuffer(base64: string): ArrayBuffer {
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
+  // Validate base64 before attempting decode
+  if (!base64 || typeof base64 !== "string") {
+    throw new InvalidBase64Error();
   }
-  return bytes.buffer;
+
+  // Check for valid base64 characters
+  const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+  if (!base64Regex.test(base64)) {
+    throw new InvalidBase64Error();
+  }
+
+  try {
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+  } catch {
+    throw new InvalidBase64Error();
+  }
 }
 
 /**
@@ -29,11 +55,33 @@ export function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 /**
+ * Error específico para PDFs protegidos
+ */
+export class EncryptedPdfError extends Error {
+  constructor() {
+    super("Este PDF esta protegido con contrasena. Por favor usa un PDF sin proteccion.");
+    this.name = "EncryptedPdfError";
+  }
+}
+
+/**
  * Gets the number of pages in a PDF
+ * @throws {EncryptedPdfError} Si el PDF está encriptado
  */
 export async function getPdfPageCount(pdfBytes: ArrayBuffer): Promise<number> {
-  const pdfDoc = await PDFDocument.load(pdfBytes);
-  return pdfDoc.getPageCount();
+  try {
+    const pdfDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+    return pdfDoc.getPageCount();
+  } catch (error) {
+    // pdf-lib lanza error si el PDF está encriptado y requiere contraseña
+    if (error instanceof Error &&
+        (error.message.includes("encrypt") ||
+         error.message.includes("password") ||
+         error.message.includes("protected"))) {
+      throw new EncryptedPdfError();
+    }
+    throw error;
+  }
 }
 
 /**
@@ -98,41 +146,67 @@ export function pagesToRangeString(pages: number[]): string {
 }
 
 /**
+ * Error específico para errores de escalado PDF
+ */
+export class PdfScalingError extends Error {
+  constructor(message?: string) {
+    super(message || "Error al ajustar el documento al tamano carta. Intenta con otro PDF.");
+    this.name = "PdfScalingError";
+  }
+}
+
+/**
  * Scales all pages of a PDF to fit letter size (8.5x11") while maintaining aspect ratio
  * Content is centered on the page
+ * @throws {PdfScalingError} Si hay error al escalar
  */
 export async function fitToLetterSize(pdfBytes: ArrayBuffer): Promise<Uint8Array> {
-  const pdfDoc = await PDFDocument.load(pdfBytes);
-  const pages = pdfDoc.getPages();
+  try {
+    const pdfDoc = await PDFDocument.load(pdfBytes);
+    const pages = pdfDoc.getPages();
 
-  for (const page of pages) {
-    const { width, height } = page.getSize();
+    for (const page of pages) {
+      const { width, height } = page.getSize();
 
-    // Skip if already letter size
-    if (Math.abs(width - LETTER_WIDTH) < 1 && Math.abs(height - LETTER_HEIGHT) < 1) {
-      continue;
+      // Skip if already letter size
+      if (Math.abs(width - LETTER_WIDTH) < 1 && Math.abs(height - LETTER_HEIGHT) < 1) {
+        continue;
+      }
+
+      // Calculate scale to fit within letter size while maintaining aspect ratio
+      const scaleX = LETTER_WIDTH / width;
+      const scaleY = LETTER_HEIGHT / height;
+      const scale = Math.min(scaleX, scaleY); // Fit, don't crop
+
+      // Scale the content
+      page.scaleContent(scale, scale);
+
+      // Set page size to letter
+      page.setSize(LETTER_WIDTH, LETTER_HEIGHT);
+
+      // Center the content
+      const newWidth = width * scale;
+      const newHeight = height * scale;
+      const offsetX = (LETTER_WIDTH - newWidth) / 2;
+      const offsetY = (LETTER_HEIGHT - newHeight) / 2;
+      page.translateContent(offsetX, offsetY);
     }
 
-    // Calculate scale to fit within letter size while maintaining aspect ratio
-    const scaleX = LETTER_WIDTH / width;
-    const scaleY = LETTER_HEIGHT / height;
-    const scale = Math.min(scaleX, scaleY); // Fit, don't crop
-
-    // Scale the content
-    page.scaleContent(scale, scale);
-
-    // Set page size to letter
-    page.setSize(LETTER_WIDTH, LETTER_HEIGHT);
-
-    // Center the content
-    const newWidth = width * scale;
-    const newHeight = height * scale;
-    const offsetX = (LETTER_WIDTH - newWidth) / 2;
-    const offsetY = (LETTER_HEIGHT - newHeight) / 2;
-    page.translateContent(offsetX, offsetY);
+    return pdfDoc.save();
+  } catch (error) {
+    if (error instanceof PdfScalingError) throw error;
+    throw new PdfScalingError();
   }
+}
 
-  return pdfDoc.save();
+/**
+ * Error específico para errores de extracción de páginas
+ */
+export class PageExtractionError extends Error {
+  constructor(message?: string) {
+    super(message || "Error al extraer las paginas seleccionadas. Intenta con otro PDF.");
+    this.name = "PageExtractionError";
+  }
 }
 
 /**
@@ -140,32 +214,38 @@ export async function fitToLetterSize(pdfBytes: ArrayBuffer): Promise<Uint8Array
  * @param pdfBytes - Original PDF as ArrayBuffer
  * @param pageNumbers - Array of 1-indexed page numbers to extract
  * @returns New PDF with only selected pages
+ * @throws {PageExtractionError} Si hay error al extraer páginas
  */
 export async function extractPages(
   pdfBytes: ArrayBuffer,
   pageNumbers: number[]
 ): Promise<Uint8Array> {
-  const srcDoc = await PDFDocument.load(pdfBytes);
-  const newDoc = await PDFDocument.create();
+  try {
+    const srcDoc = await PDFDocument.load(pdfBytes);
+    const newDoc = await PDFDocument.create();
 
-  // Convert 1-indexed to 0-indexed and filter valid pages
-  const totalPages = srcDoc.getPageCount();
-  const validIndices = pageNumbers
-    .map((n) => n - 1)
-    .filter((i) => i >= 0 && i < totalPages);
+    // Convert 1-indexed to 0-indexed and filter valid pages
+    const totalPages = srcDoc.getPageCount();
+    const validIndices = pageNumbers
+      .map((n) => n - 1)
+      .filter((i) => i >= 0 && i < totalPages);
 
-  if (validIndices.length === 0) {
-    throw new Error("No hay paginas validas para extraer");
+    if (validIndices.length === 0) {
+      throw new PageExtractionError("No hay paginas validas para extraer");
+    }
+
+    // Copy selected pages to new document
+    const copiedPages = await newDoc.copyPages(srcDoc, validIndices);
+
+    for (const page of copiedPages) {
+      newDoc.addPage(page);
+    }
+
+    return newDoc.save();
+  } catch (error) {
+    if (error instanceof PageExtractionError) throw error;
+    throw new PageExtractionError();
   }
-
-  // Copy selected pages to new document
-  const copiedPages = await newDoc.copyPages(srcDoc, validIndices);
-
-  for (const page of copiedPages) {
-    newDoc.addPage(page);
-  }
-
-  return newDoc.save();
 }
 
 /**

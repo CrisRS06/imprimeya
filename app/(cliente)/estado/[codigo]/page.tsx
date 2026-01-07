@@ -103,8 +103,14 @@ export default function EstadoPedidoPage({
     if (showRefreshing) setRefreshing(true);
     else setLoading(true);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
     try {
-      const response = await fetch(`/api/orders/${codigo}`);
+      const response = await fetch(`/api/orders/${codigo}`, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
       const data = await response.json();
 
       if (!response.ok) {
@@ -114,8 +120,13 @@ export default function EstadoPedidoPage({
         setOrder(data.order);
         setError(null);
       }
-    } catch {
-      setError("Error de conexion");
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err instanceof Error && err.name === "AbortError") {
+        setError("Conexion lenta. Intenta de nuevo.");
+      } else {
+        setError("Error de conexion");
+      }
       setOrder(null);
     } finally {
       setLoading(false);

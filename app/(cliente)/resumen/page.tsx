@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useOrder } from "@/lib/context/OrderContext";
-import { generateOrderCode, formatOrderCode } from "@/lib/utils/code-generator";
+import { formatOrderCode } from "@/lib/utils/code-generator";
 import {
   CheckCircleIcon,
   CopyIcon,
@@ -148,12 +148,8 @@ function ResumenPageContent() {
     }
   }, [productType]);
 
-  // Generate preview code on mount
-  useEffect(() => {
-    if (!orderCode && !isSubmitted) {
-      setOrderCode(generateOrderCode());
-    }
-  }, [orderCode, isSubmitted]);
+  // Nota: El código se genera en el servidor al confirmar
+  // No mostramos preview para evitar confusión si hay colisión
 
   // Copy code to clipboard
   const handleCopyCode = async () => {
@@ -228,27 +224,41 @@ function ResumenPageContent() {
         ? "Carta"
         : selectedLayout?.photo_size || "4x6";
 
-      // Call API
-      const response = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productType,
-          sizeName,
-          paperType: selectedPaper || "bond_normal",  // Default para documentos
-          quantity: sheetsCount,  // API usa quantity para hojas a imprimir
-          originalImages: uploadedImages,  // Ahora son paths de Supabase Storage
-          isColor,  // Para documentos: true = color (₡100), false = B&N (₡50)
-          designData: {
-            ...state.fabricData,
-            layoutId: selectedLayout?.id,
+      // Call API con timeout (Vercel Hobby limit: 10s)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      let response: Response;
+      try {
+        response = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            productType,
             sizeName,
-            totalPhotos: totalQuantity,
-            photosWithQuantities: photos,
-            fillMode, // fill=cover, fit=contain
-          },
-        }),
-      });
+            paperType: selectedPaper || "bond_normal",
+            quantity: sheetsCount,
+            originalImages: uploadedImages,
+            isColor,
+            designData: {
+              ...state.fabricData,
+              layoutId: selectedLayout?.id,
+              sizeName,
+              totalPhotos: totalQuantity,
+              photosWithQuantities: photos,
+              fillMode,
+            },
+          }),
+        });
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        if (fetchError instanceof Error && fetchError.name === "AbortError") {
+          throw new Error("La conexion es muy lenta. Intenta de nuevo.");
+        }
+        throw fetchError;
+      }
+      clearTimeout(timeoutId);
 
       const data = await response.json();
 
@@ -422,7 +432,7 @@ function ResumenPageContent() {
         <header className="px-6 pt-6 pb-4 flex items-center justify-between">
           <button
             onClick={() => router.back()}
-            disabled={isSubmitting}
+            disabled={isSubmitting || showSuccess}
             className="flex items-center gap-1 text-gray-400 hover:text-black transition-colors disabled:opacity-50"
           >
             <ArrowLeftIcon className="w-5 h-5" />
@@ -599,24 +609,17 @@ function ResumenPageContent() {
               )}
             </motion.div>
 
-            {/* Code preview */}
-            <AnimatePresence>
-              {orderCode && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="bg-gray-100 rounded-2xl p-5 text-center"
-                >
-                  <p className="text-sm text-gray-600 mb-2">
-                    Tu codigo sera
-                  </p>
-                  <p className="text-3xl font-mono font-bold text-gray-900 tracking-widest">
-                    {formatOrderCode(orderCode)}
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Info: código se genera al confirmar */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="bg-gray-100 rounded-2xl p-5 text-center"
+            >
+              <p className="text-sm text-gray-600">
+                Al confirmar recibiras un codigo unico para recoger tu pedido
+              </p>
+            </motion.div>
 
             {/* Payment note */}
             <motion.p
@@ -636,7 +639,7 @@ function ResumenPageContent() {
             {/* Confirm button */}
             <Button
               onClick={handleSubmitOrder}
-              disabled={isSubmitting}
+              disabled={isSubmitting || showSuccess}
               className="w-full h-14 text-base font-semibold rounded-2xl disabled:opacity-70"
             >
               {isSubmitting ? (

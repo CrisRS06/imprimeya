@@ -24,8 +24,11 @@ export function isHeicFile(file: File): boolean {
   return extension === "heic" || extension === "heif";
 }
 
+// Timeout para conversion HEIC (15 segundos)
+const HEIC_CONVERSION_TIMEOUT = 15000;
+
 /**
- * Convierte un archivo HEIC/HEIF a JPEG
+ * Convierte un archivo HEIC/HEIF a JPEG con timeout
  * @param file Archivo HEIC/HEIF
  * @param quality Calidad de compresion JPEG (0-1)
  * @returns Archivo JPEG
@@ -40,12 +43,21 @@ export async function convertHeicToJpeg(
   // Convertir archivo a ArrayBuffer
   const arrayBuffer = await file.arrayBuffer();
 
-  // Convertir HEIC a JPEG blob
-  const jpegBlob = await heicTo({
+  // Promise de conversion con timeout
+  const conversionPromise = heicTo({
     blob: new Blob([arrayBuffer]),
     type: "image/jpeg",
     quality,
   });
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => {
+      reject(new Error("Conversion HEIC timeout - imagen muy grande o formato no soportado"));
+    }, HEIC_CONVERSION_TIMEOUT);
+  });
+
+  // Usar Promise.race para aplicar timeout
+  const jpegBlob = await Promise.race([conversionPromise, timeoutPromise]);
 
   // Crear nuevo nombre de archivo con extension .jpg
   const originalName = file.name;

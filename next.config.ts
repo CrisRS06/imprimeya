@@ -69,7 +69,7 @@ const nextConfig: NextConfig = {
               "worker-src 'self' blob:", // For service worker and web workers
               "media-src 'self' blob:", // For audio/video elements
               "manifest-src 'self'", // For PWA manifest
-              "frame-src 'none'",
+              "frame-src 'self' https://*.supabase.co",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",

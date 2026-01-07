@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { OrderCard } from "@/components/staff/OrderCard";
+import { DeleteOrderDialog } from "@/components/staff/DeleteOrderDialog";
 import { StatusBadge } from "@/components/staff/StatusBadge";
 import type { OrderStatus } from "@/lib/supabase/types";
 import {
@@ -40,6 +41,7 @@ export default function StaffDashboardPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
 
   const fetchOrders = useCallback(async (showRefreshing = false) => {
     if (showRefreshing) setRefreshing(true);
@@ -98,6 +100,15 @@ export default function StaffDashboardPage() {
 
     // Navegar directo a la vista de impresion
     router.push(`/imprimir/${order.id}`);
+  };
+
+  const handleDeleteClick = (order: Order) => {
+    setOrderToDelete(order);
+  };
+
+  const handleOrderDeleted = () => {
+    setOrderToDelete(null);
+    fetchOrders(true);
   };
 
   // Contadores por estado
@@ -178,10 +189,21 @@ export default function StaffDashboardPage() {
               key={order.id}
               order={order}
               onClick={() => handleOrderClick(order)}
+              onDelete={() => handleDeleteClick(order)}
               isNew={newOrderIds.has(order.id)}
             />
           ))}
         </div>
+      )}
+
+      {/* Delete confirmation dialog */}
+      {orderToDelete && (
+        <DeleteOrderDialog
+          order={orderToDelete}
+          open={!!orderToDelete}
+          onOpenChange={(open) => !open && setOrderToDelete(null)}
+          onDeleted={handleOrderDeleted}
+        />
       )}
     </div>
   );

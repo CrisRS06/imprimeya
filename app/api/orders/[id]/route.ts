@@ -217,13 +217,21 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { id } = await params;
     const supabase = await createServiceClient();
 
-    // Verificar que el pedido existe y no esta entregado
+    // Verificar que el pedido existe y obtener paths de archivos
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: existing } = await (supabase as any)
       .from("orders")
-      .select("id, status")
+      .select("id, status, original_images, processed_image_path, pdf_path")
       .eq("id", id)
-      .single() as { data: { id: string; status: OrderStatus } | null };
+      .single() as {
+        data: {
+          id: string;
+          status: OrderStatus;
+          original_images: string[] | null;
+          processed_image_path: string | null;
+          pdf_path: string | null;
+        } | null
+      };
 
     if (!existing) {
       return NextResponse.json(
@@ -232,12 +240,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    if (existing.status === "delivered") {
-      return NextResponse.json(
-        { error: "No se puede cancelar un pedido entregado" },
-        { status: 400 }
-      );
-    }
+    const previousStatus = existing.status;
 
     // Marcar como cancelado en lugar de eliminar
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -260,10 +263,36 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    // Eliminar archivos del storage
+    let filesDeleted = 0;
+    try {
+      if (existing.original_images?.length) {
+        await supabase.storage.from("originals").remove(existing.original_images);
+        filesDeleted += existing.original_images.length;
+      }
+      if (existing.processed_image_path) {
+        await supabase.storage.from("processed").remove([existing.processed_image_path]);
+        filesDeleted += 1;
+      }
+      if (existing.pdf_path) {
+        await supabase.storage.from("pdfs").remove([existing.pdf_path]);
+        filesDeleted += 1;
+      }
+    } catch (storageError) {
+      // Log pero no fallar - la orden ya fue cancelada
+      log.warn("Error deleting storage files", {
+        orderId: id,
+        error: storageError instanceof Error ? storageError.message : "Unknown error",
+        requestId,
+      });
+    }
+
     log.info("Order cancelled by staff", {
       orderId: id,
       staffId: staffUser.id,
       staffEmail: staffUser.email,
+      previousStatus,
+      filesDeleted,
       requestId,
     });
 

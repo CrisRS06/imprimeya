@@ -6,7 +6,7 @@ import { formatOrderCode } from "@/lib/utils/code-generator";
 import { formatPrice } from "@/lib/utils/price-calculator";
 import { cn } from "@/lib/utils";
 import type { OrderStatus } from "@/lib/supabase/types";
-import { ClockIcon } from "lucide-react";
+import { ClockIcon, Trash2Icon } from "lucide-react";
 
 interface OrderCardProps {
   order: {
@@ -25,6 +25,7 @@ interface OrderCardProps {
     paperSurcharge?: number;
   };
   onClick?: () => void;
+  onDelete?: () => void;
   isNew?: boolean;
   className?: string;
 }
@@ -51,11 +52,11 @@ function formatTimeAgo(dateString: string): string {
   return `Hace ${diffDays}d`;
 }
 
-export function OrderCard({ order, onClick, isNew, className }: OrderCardProps) {
+export function OrderCard({ order, onClick, onDelete, isNew, className }: OrderCardProps) {
   return (
     <div
       className={cn(
-        "bg-white rounded-xl border border-gray-100 p-5 cursor-pointer transition-all duration-200",
+        "relative group bg-white rounded-xl border border-gray-100 p-5 cursor-pointer transition-all duration-200",
         "hover:shadow-lg hover:shadow-black/5 hover:border-gray-200",
         isNew && "ring-2 ring-primary animate-pulse",
         className
@@ -107,6 +108,24 @@ export function OrderCard({ order, onClick, isNew, className }: OrderCardProps) 
           </p>
         </div>
       </div>
+
+      {/* Botón de eliminar */}
+      {onDelete && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className={cn(
+            "absolute top-3 right-3 p-2 rounded-lg transition-all",
+            "bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-600",
+            "opacity-0 group-hover:opacity-100 focus:opacity-100"
+          )}
+          title="Eliminar pedido"
+        >
+          <Trash2Icon className="w-4 h-4" />
+        </button>
+      )}
     </div>
   );
 }

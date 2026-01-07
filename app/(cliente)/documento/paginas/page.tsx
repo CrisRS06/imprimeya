@@ -297,7 +297,9 @@ export default function SeleccionarPaginasPage() {
               onClick={selectFirst10}
               className={cn(
                 "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
-                "bg-white border border-gray-200 text-gray-700 hover:bg-gray-100"
+                selectedPages.size === 10 && Array.from({ length: 10 }, (_, i) => i + 1).every(p => selectedPages.has(p))
+                  ? "bg-emerald-500 text-white"
+                  : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-100"
               )}
             >
               Primeras 10

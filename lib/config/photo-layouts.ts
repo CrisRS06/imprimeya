@@ -94,8 +94,8 @@ export const PHOTO_SIZES: Record<PhotoSizeType, PhotoSizeInfo> = {
     name: 'pasaporte',
     displayName: 'Pasaporte',
     width: 1.4,   // 35mm
-    height: 1.8,  // 45mm
-    maxPerSheet: 25,
+    height: 1.4,  // 35mm (cuadrado)
+    maxPerSheet: 30,
   },
 }
 
@@ -417,53 +417,58 @@ export const PHOTO_LAYOUTS: PhotoLayout[] = [
     is_active: true,
     sort_order: 10,
   },
-  // Pasaporte 35x45mm - Veinticinco fotos 5x5 grid (LLENA LA HOJA)
+  // Pasaporte 35x35mm - Treinta fotos 5x6 grid (LLENA LA HOJA)
   {
-    id: '25x-pasaporte',
-    name: '25x-pasaporte',
-    display_name: '25 Pasaporte',
-    description: 'Veinticinco fotos tamano pasaporte 35x45mm',
+    id: '30x-pasaporte',
+    name: '30x-pasaporte',
+    display_name: '30 Pasaporte',
+    description: 'Treinta fotos tamano pasaporte 35x35mm (cuadrado)',
     photo_size: 'pasaporte',
     photo_width_inches: 1.4,
-    photo_height_inches: 1.8,
-    photos_per_sheet: 25,
+    photo_height_inches: 1.4,
+    photos_per_sheet: 30,
     allows_repeat: true,
     allows_different: true,
     layout_data: {
-      // 5x5 grid: ancho 7" + 4 gaps de 0.125" = 7.5"
-      // Margen horizontal: (8.0 - 7.5)/2 + 0.25 = 0.5
-      // Alto: 9" + 4 gaps de 0.125" = 9.5", centrado: 0.25 + (10.25-9.5)/2 = 0.625
+      // 5x6 grid: ancho 7" + 4 gaps = 7.5", alto 8.4" + 5 gaps = 9.025"
+      // Centrado: x = 0.5, y = 0.8625
       positions: [
         // Fila 1
-        { x: 0.5, y: 0.625, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 2.025, y: 0.625, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 3.55, y: 0.625, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 5.075, y: 0.625, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 6.6, y: 0.625, width: 1.4, height: 1.8, rotation: 0 },
+        { x: 0.5, y: 0.8625, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 2.025, y: 0.8625, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 3.55, y: 0.8625, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 5.075, y: 0.8625, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 6.6, y: 0.8625, width: 1.4, height: 1.4, rotation: 0 },
         // Fila 2
-        { x: 0.5, y: 2.55, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 2.025, y: 2.55, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 3.55, y: 2.55, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 5.075, y: 2.55, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 6.6, y: 2.55, width: 1.4, height: 1.8, rotation: 0 },
+        { x: 0.5, y: 2.3875, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 2.025, y: 2.3875, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 3.55, y: 2.3875, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 5.075, y: 2.3875, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 6.6, y: 2.3875, width: 1.4, height: 1.4, rotation: 0 },
         // Fila 3
-        { x: 0.5, y: 4.475, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 2.025, y: 4.475, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 3.55, y: 4.475, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 5.075, y: 4.475, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 6.6, y: 4.475, width: 1.4, height: 1.8, rotation: 0 },
+        { x: 0.5, y: 3.9125, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 2.025, y: 3.9125, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 3.55, y: 3.9125, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 5.075, y: 3.9125, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 6.6, y: 3.9125, width: 1.4, height: 1.4, rotation: 0 },
         // Fila 4
-        { x: 0.5, y: 6.4, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 2.025, y: 6.4, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 3.55, y: 6.4, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 5.075, y: 6.4, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 6.6, y: 6.4, width: 1.4, height: 1.8, rotation: 0 },
+        { x: 0.5, y: 5.4375, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 2.025, y: 5.4375, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 3.55, y: 5.4375, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 5.075, y: 5.4375, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 6.6, y: 5.4375, width: 1.4, height: 1.4, rotation: 0 },
         // Fila 5
-        { x: 0.5, y: 8.325, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 2.025, y: 8.325, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 3.55, y: 8.325, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 5.075, y: 8.325, width: 1.4, height: 1.8, rotation: 0 },
-        { x: 6.6, y: 8.325, width: 1.4, height: 1.8, rotation: 0 },
+        { x: 0.5, y: 6.9625, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 2.025, y: 6.9625, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 3.55, y: 6.9625, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 5.075, y: 6.9625, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 6.6, y: 6.9625, width: 1.4, height: 1.4, rotation: 0 },
+        // Fila 6
+        { x: 0.5, y: 8.4875, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 2.025, y: 8.4875, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 3.55, y: 8.4875, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 5.075, y: 8.4875, width: 1.4, height: 1.4, rotation: 0 },
+        { x: 6.6, y: 8.4875, width: 1.4, height: 1.4, rotation: 0 },
       ],
     },
     compatible_papers: ['fotografico', 'bond_normal'],

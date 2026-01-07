@@ -8,6 +8,7 @@ import { formatPrice } from "@/lib/utils/price-calculator";
 import { printWithIframe, type PrintPageData } from "@/lib/utils/print-iframe";
 import type { PhotoLayout } from "@/lib/supabase/types";
 import { toast } from "sonner";
+import { DocumentPrintView } from "@/components/staff/DocumentPrintView";
 import {
   PrinterIcon,
   ArrowLeftIcon,
@@ -224,6 +225,19 @@ export default function PrintPage({
     );
   }
 
+  // Bifurcacion: los documentos no usan layouts, renderizar vista especifica
+  if (data.order.productType === "document") {
+    return (
+      <DocumentPrintView
+        order={data.order}
+        print={data.print}
+        onMarkDelivered={handleMarkDelivered}
+        markingDelivered={markingDelivered}
+      />
+    );
+  }
+
+  // Solo para fotos - buscar layout
   const layout = getLayoutById(data.print.layoutId);
 
   if (!layout) {

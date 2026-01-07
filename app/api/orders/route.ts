@@ -256,6 +256,7 @@ export async function POST(request: NextRequest) {
       paper_option_id: paperOption.id,
       collage_template_id: body.collageTemplateId || null,
       quantity: body.quantity,
+      is_color: body.isColor !== false, // Guardar si es color o B/N
       poster_rows: body.posterRows || null,
       poster_cols: body.posterCols || null,
       original_images: body.originalImages,

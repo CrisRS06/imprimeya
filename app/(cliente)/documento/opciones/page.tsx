@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
 import { useDocumentStorage } from "@/hooks/useDocumentStorage";
 import type { PaperType } from "@/lib/supabase/types";
 import {
@@ -74,35 +73,45 @@ export default function DocumentoOpcionesPage() {
       // 2. Convertir ArrayBuffer a blob
       const blob = new Blob([storedDoc.pdfData], { type: "application/pdf" });
 
-      // 3. Generar path único
+      // 3. Obtener sessionId
       let sessionId = sessionStorage.getItem("uploadSessionId");
       if (!sessionId) {
         sessionId = crypto.randomUUID();
         sessionStorage.setItem("uploadSessionId", sessionId);
       }
-      const storagePath = `${sessionId}/${crypto.randomUUID()}.pdf`;
 
-      // 4. Subir a Supabase Storage
-      const supabase = createClient();
-      const { error } = await supabase.storage
-        .from("originals")
-        .upload(storagePath, blob, {
-          contentType: "application/pdf",
-          upsert: false,
-        });
+      // 4. Obtener URL firmada del servidor (bypassa RLS)
+      const urlResponse = await fetch("/api/documents/upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      });
 
-      if (error) {
-        console.error("Storage upload error:", error);
-        throw new Error("Error al subir el documento");
+      if (!urlResponse.ok) {
+        const errorData = await urlResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || "Error obteniendo URL de upload");
       }
 
-      // 5. Guardar path y opciones en sessionStorage
-      sessionStorage.setItem("documentStoragePath", storagePath);
+      const { signedUrl, path } = await urlResponse.json();
+
+      // 5. Subir directo a Supabase con URL firmada (hasta 50MB)
+      const uploadResponse = await fetch(signedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "application/pdf" },
+        body: blob,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Error subiendo documento a storage");
+      }
+
+      // 6. Guardar path y opciones en sessionStorage
+      sessionStorage.setItem("documentStoragePath", path);
       sessionStorage.setItem("documentIsColor", isColor.toString());
       sessionStorage.setItem("selectedPaper", selectedPaper);
       sessionStorage.setItem("sheetsCount", (document.pageCount || 1).toString());
 
-      // 6. Navegar al resumen
+      // 7. Navegar al resumen
       router.push("/resumen?type=document");
     } catch (error) {
       console.error("Error uploading document:", error);

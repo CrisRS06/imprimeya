@@ -382,6 +382,9 @@ export async function GET(request: NextRequest) {
 
     if (status) {
       query = query.eq("status", status);
+    } else {
+      // Por defecto, excluir pedidos cancelados del listado
+      query = query.neq("status", "cancelled");
     }
 
     const { data: orders, error, count } = await query;

@@ -174,7 +174,7 @@ export const cleanupOldFiles = inngest.createFunction(
   },
   { cron: "0 3 * * *" }, // Todos los dias a las 3 AM
   async ({ step }) => {
-    const olderThanDays = 30;
+    const olderThanDays = 7;
     log.info("Starting cleanup job", { olderThanDays });
 
     // Limpiar imagenes originales

@@ -155,6 +155,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validar que los archivos existan en Storage antes de crear la orden
+    const missingFiles: string[] = [];
+    for (const imagePath of body.originalImages) {
+      // Path formato: {sessionId}/{fileName}.pdf
+      const lastSlash = imagePath.lastIndexOf("/");
+      if (lastSlash === -1) {
+        missingFiles.push(imagePath);
+        continue;
+      }
+
+      const folder = imagePath.substring(0, lastSlash);
+      const fileName = imagePath.substring(lastSlash + 1);
+
+      // Usar list() - más eficiente que download(), no consume bandwidth
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: files, error: listError } = await (supabase as any).storage
+        .from("originals")
+        .list(folder, { limit: 100 });
+
+      if (listError) {
+        log.error("Error listing storage folder", listError, { folder, requestId });
+        missingFiles.push(imagePath);
+        continue;
+      }
+
+      const fileExists = files?.some((f: { name: string }) => f.name === fileName);
+      if (!fileExists) {
+        missingFiles.push(imagePath);
+      }
+    }
+
+    if (missingFiles.length > 0) {
+      log.warn("Files not found in storage", { missingFiles, requestId });
+      return NextResponse.json(
+        {
+          error: "El documento ya no existe. Por favor vuelve a subirlo.",
+          details: [`Archivos faltantes: ${missingFiles.length}`]
+        },
+        { status: 410 } // 410 Gone - recurso ya no está disponible
+      );
+    }
+
     log.info("Creating order", { productType: body.productType, quantity: body.quantity, requestId });
 
     // Generar codigo unico

@@ -84,12 +84,12 @@ function ResumenPageContent() {
 
   // Load data from sessionStorage
   useEffect(() => {
-    // Para documentos: cargar storagePath del PDF
+    // Para documentos: cargar storagePath del PDF desde localStorage (persiste si recarga)
     if (productType === "document") {
-      const documentPath = sessionStorage.getItem("documentStoragePath");
+      const documentPath = localStorage.getItem("documentStoragePath");
       if (documentPath) {
         // Crear pseudo-photo con el storagePath del documento
-        const docInfo = sessionStorage.getItem("uploadedDocument");
+        const docInfo = localStorage.getItem("uploadedDocument");
         const docName = docInfo ? JSON.parse(docInfo).name : "documento.pdf";
         setPhotos([{
           id: "document-pdf",
@@ -123,20 +123,34 @@ function ResumenPageContent() {
       }
     }
 
-    // Paper
-    const paper = sessionStorage.getItem("selectedPaper") as PaperType;
-    if (paper) {
-      setSelectedPaper(paper);
+    // Paper - documentos usan localStorage, fotos usan sessionStorage
+    if (productType === "document") {
+      const paper = localStorage.getItem("documentSelectedPaper") as PaperType;
+      if (paper) {
+        setSelectedPaper(paper);
+      }
+    } else {
+      const paper = sessionStorage.getItem("selectedPaper") as PaperType;
+      if (paper) {
+        setSelectedPaper(paper);
+      }
     }
 
-    // Sheets count
-    const sheets = sessionStorage.getItem("sheetsCount");
-    if (sheets) {
-      setSheetsCount(parseInt(sheets, 10));
+    // Sheets count - documentos usan localStorage, fotos usan sessionStorage
+    if (productType === "document") {
+      const sheets = localStorage.getItem("documentSheetsCount");
+      if (sheets) {
+        setSheetsCount(parseInt(sheets, 10));
+      }
+    } else {
+      const sheets = sessionStorage.getItem("sheetsCount");
+      if (sheets) {
+        setSheetsCount(parseInt(sheets, 10));
+      }
     }
 
-    // Color (para documentos)
-    const colorSetting = sessionStorage.getItem("documentIsColor");
+    // Color (para documentos) - usa localStorage para persistir
+    const colorSetting = localStorage.getItem("documentIsColor");
     if (colorSetting !== null) {
       setIsColor(colorSetting === "true");
     }
@@ -300,11 +314,13 @@ function ResumenPageContent() {
     sessionStorage.removeItem("repeatMode");
     sessionStorage.removeItem("uploadSessionId");
     sessionStorage.removeItem("fillMode");
-    // Limpiar datos de documentos
-    sessionStorage.removeItem("documentPdfData");
-    sessionStorage.removeItem("documentStoragePath");
-    sessionStorage.removeItem("uploadedDocument");
-    sessionStorage.removeItem("documentIsColor");
+    // Limpiar datos de documentos (usan localStorage para persistir)
+    localStorage.removeItem("currentDocumentId");
+    localStorage.removeItem("uploadedDocument");
+    localStorage.removeItem("documentStoragePath");
+    localStorage.removeItem("documentIsColor");
+    localStorage.removeItem("documentSelectedPaper");
+    localStorage.removeItem("documentSheetsCount");
     router.push("/");
   };
 

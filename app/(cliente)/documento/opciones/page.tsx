@@ -95,21 +95,36 @@ export default function DocumentoOpcionesPage() {
       const { signedUrl, path } = await urlResponse.json();
 
       // 5. Subir directo a Supabase con URL firmada (hasta 50MB)
-      const uploadResponse = await fetch(signedUrl, {
-        method: "PUT",
-        headers: { "Content-Type": "application/pdf" },
-        body: blob,
-      });
+      // Timeout de 60 segundos para evitar que el cliente espere infinito
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-      if (!uploadResponse.ok) {
-        throw new Error("Error subiendo documento a storage");
+      try {
+        const uploadResponse = await fetch(signedUrl, {
+          method: "PUT",
+          headers: { "Content-Type": "application/pdf" },
+          body: blob,
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!uploadResponse.ok) {
+          throw new Error("Error subiendo documento a storage");
+        }
+      } catch (err) {
+        clearTimeout(timeoutId);
+        if (err instanceof Error && err.name === "AbortError") {
+          throw new Error("El upload tardó demasiado. Verifica tu conexión e intenta de nuevo.");
+        }
+        throw err;
       }
 
-      // 6. Guardar path y opciones en sessionStorage
-      sessionStorage.setItem("documentStoragePath", path);
-      sessionStorage.setItem("documentIsColor", isColor.toString());
-      sessionStorage.setItem("selectedPaper", selectedPaper);
-      sessionStorage.setItem("sheetsCount", (document.pageCount || 1).toString());
+      // 6. Guardar path y opciones en localStorage (persiste si recarga)
+      localStorage.setItem("documentStoragePath", path);
+      localStorage.setItem("documentIsColor", isColor.toString());
+      localStorage.setItem("documentSelectedPaper", selectedPaper);
+      localStorage.setItem("documentSheetsCount", (document.pageCount || 1).toString());
 
       // 7. Navegar al resumen
       router.push("/resumen?type=document");
@@ -141,10 +156,10 @@ export default function DocumentoOpcionesPage() {
               }
               localStorage.removeItem("currentDocumentId");
               localStorage.removeItem("uploadedDocument");
-              sessionStorage.removeItem("documentStoragePath");
-              sessionStorage.removeItem("documentIsColor");
-              sessionStorage.removeItem("selectedPaper");
-              sessionStorage.removeItem("sheetsCount");
+              localStorage.removeItem("documentStoragePath");
+              localStorage.removeItem("documentIsColor");
+              localStorage.removeItem("documentSelectedPaper");
+              localStorage.removeItem("documentSheetsCount");
               router.push("/documento");
             }}
             className="p-2 -ml-2 text-gray-600 hover:text-gray-900 transition-colors"

@@ -17,7 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { base64ToArrayBuffer } from "@/lib/utils/pdf-processor";
+import { useDocumentStorage } from "@/hooks/useDocumentStorage";
 import type { PaperType } from "@/lib/supabase/types";
 import {
   PRINT_COSTS,
@@ -36,17 +36,21 @@ interface StoredDocument {
 
 export default function DocumentoOpcionesPage() {
   const router = useRouter();
+  const { getDocument, deleteDocument } = useDocumentStorage();
   const [document, setDocument] = useState<StoredDocument | null>(null);
+  const [documentId, setDocumentId] = useState<string | null>(null);
   const [isColor, setIsColor] = useState(true);
   const [selectedPaper, setSelectedPaper] = useState<PaperType>("bond_normal");
   const [isUploading, setIsUploading] = useState(false);
 
-  // Load document from sessionStorage
+  // Load document metadata from localStorage
   useEffect(() => {
-    const stored = sessionStorage.getItem("uploadedDocument");
-    if (stored) {
+    const stored = localStorage.getItem("uploadedDocument");
+    const docId = localStorage.getItem("currentDocumentId");
+    if (stored && docId) {
       try {
         setDocument(JSON.parse(stored));
+        setDocumentId(docId);
       } catch {
         // Redirect if no document
         router.push("/documento");
@@ -57,19 +61,18 @@ export default function DocumentoOpcionesPage() {
   }, [router]);
 
   const handleContinue = async () => {
-    if (!document) return;
+    if (!document || !documentId) return;
     setIsUploading(true);
 
     try {
-      // 1. Leer PDF procesado de sessionStorage
-      const pdfBase64 = sessionStorage.getItem("documentPdfData");
-      if (!pdfBase64) {
+      // 1. Leer PDF procesado de IndexedDB
+      const storedDoc = await getDocument(documentId);
+      if (!storedDoc?.pdfData) {
         throw new Error("No se encontró el documento. Por favor vuelve a subirlo.");
       }
 
-      // 2. Convertir a blob
-      const pdfBuffer = base64ToArrayBuffer(pdfBase64);
-      const blob = new Blob([pdfBuffer], { type: "application/pdf" });
+      // 2. Convertir ArrayBuffer a blob
+      const blob = new Blob([storedDoc.pdfData], { type: "application/pdf" });
 
       // 3. Generar path único
       let sessionId = sessionStorage.getItem("uploadSessionId");
@@ -122,10 +125,13 @@ export default function DocumentoOpcionesPage() {
       <header className="px-4 pt-6 pb-4">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => {
+            onClick={async () => {
               // Clear document state to prevent stale data
-              sessionStorage.removeItem("documentPdfData");
-              sessionStorage.removeItem("uploadedDocument");
+              if (documentId) {
+                await deleteDocument(documentId);
+              }
+              localStorage.removeItem("currentDocumentId");
+              localStorage.removeItem("uploadedDocument");
               sessionStorage.removeItem("documentStoragePath");
               sessionStorage.removeItem("documentIsColor");
               sessionStorage.removeItem("selectedPaper");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useOrder } from "@/lib/context/OrderContext";
 import { getPdfPageCount, EncryptedPdfError } from "@/lib/utils/pdf-processor";
+import { useDocumentStorage } from "@/hooks/useDocumentStorage";
 
 interface UploadedDocument {
   id: string;
@@ -37,8 +38,14 @@ const ACCEPTED_TYPES = {
 export default function DocumentoPage() {
   const router = useRouter();
   const { setProductType } = useOrder();
+  const { saveDocument, cleanupExpired } = useDocumentStorage();
   const [document, setDocument] = useState<UploadedDocument | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Limpiar documentos expirados al cargar la página
+  useEffect(() => {
+    cleanupExpired();
+  }, [cleanupExpired]);
 
   const getFileType = (file: File): "pdf" | null => {
     const name = file.name.toLowerCase();
@@ -125,7 +132,7 @@ export default function DocumentoPage() {
       // Handle rejected files
       rejectedFiles.forEach((rejection) => {
         const errors = rejection.errors.map((e) => {
-          if (e.code === "file-too-large") return "Archivo muy grande (max 20MB)";
+          if (e.code === "file-too-large") return "Archivo muy grande (max 50MB)";
           if (e.code === "file-invalid-type") return "Solo se acepta formato PDF";
           return e.message;
         });
@@ -152,7 +159,7 @@ export default function DocumentoPage() {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: ACCEPTED_TYPES,
-    maxSize: 20 * 1024 * 1024, // 20MB
+    maxSize: 50 * 1024 * 1024, // 50MB
     maxFiles: 1,
     disabled: isProcessing,
   });
@@ -162,37 +169,35 @@ export default function DocumentoPage() {
   const handleContinue = async () => {
     if (!document) return;
 
-    // Show processing state during base64 conversion (can freeze UI on large files)
     setIsProcessing(true);
 
     try {
       setProductType("document");
 
-      // Convert file to base64 for storage
-      const arrayBuffer = await document.file.arrayBuffer();
-      const base64 = btoa(
-        new Uint8Array(arrayBuffer).reduce(
-          (data, byte) => data + String.fromCharCode(byte),
-          ""
-        )
-      );
+      // Guardar PDF en IndexedDB (soporta hasta 50MB+)
+      const docId = await saveDocument(document.file, document.pageCount || 1);
 
-      // Save PDF data and metadata to sessionStorage
-      sessionStorage.setItem("documentPdfData", base64);
-      sessionStorage.setItem(
+      // Guardar solo metadata y referencia en localStorage
+      localStorage.setItem("currentDocumentId", docId);
+      localStorage.setItem(
         "uploadedDocument",
         JSON.stringify({
           name: document.name,
           type: document.type,
           size: document.size,
           pageCount: document.pageCount,
+          documentId: docId,
         })
       );
 
       router.push("/documento/paginas");
     } catch (err) {
       console.error("Error preparing document:", err);
-      toast.error("Error al preparar el documento. Intenta de nuevo.");
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Error al preparar el documento. Intenta de nuevo."
+      );
       setIsProcessing(false);
     }
   };
@@ -260,7 +265,7 @@ export default function DocumentoPage() {
               </p>
               <p className="text-sm text-gray-500 mt-1">o arrastra y suelta</p>
               <p className="text-xs text-gray-400 mt-4">
-                Solo PDF - Max 20MB
+                Solo PDF - Max 50MB
               </p>
             </motion.div>
           </div>

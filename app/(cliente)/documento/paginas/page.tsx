@@ -6,17 +6,15 @@ import { List, RowComponentProps } from "react-window";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  base64ToArrayBuffer,
-  arrayBufferToBase64,
   getPdfPageCount,
   parsePageRanges,
   pagesToRangeString,
   processPdfForPrint,
   EncryptedPdfError,
-  InvalidBase64Error,
   PdfScalingError,
   PageExtractionError,
 } from "@/lib/utils/pdf-processor";
+import { useDocumentStorage } from "@/hooks/useDocumentStorage";
 import {
   ArrowLeftIcon,
   CheckCircle2Icon,
@@ -70,9 +68,11 @@ function CheckboxRow(props: RowComponentProps<RowCustomProps>) {
 export default function SeleccionarPaginasPage() {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
+  const { getDocument, updateDocument } = useDocumentStorage();
   const [numPages, setNumPages] = useState(0);
   const [selectedPages, setSelectedPages] = useState<Set<number>>(new Set());
   const [pdfData, setPdfData] = useState<ArrayBuffer | null>(null);
+  const [documentId, setDocumentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,22 +91,23 @@ export default function SeleccionarPaginasPage() {
     return () => window.removeEventListener("resize", updateHeight);
   }, []);
 
-  // Load PDF and count pages
+  // Load PDF from IndexedDB
   useEffect(() => {
     const loadPdf = async () => {
-      const stored = sessionStorage.getItem("documentPdfData");
-      if (!stored) {
+      const docId = localStorage.getItem("currentDocumentId");
+      if (!docId) {
         setError("No se encontro el documento. Por favor sube un PDF nuevamente.");
         setLoading(false);
         return;
       }
 
       try {
-        const buffer = base64ToArrayBuffer(stored);
-        setPdfData(buffer);
+        setDocumentId(docId);
+        const doc = await getDocument(docId);
+        setPdfData(doc.pdfData);
 
-        // Get page count using pdf-lib (fast, no rendering)
-        const pageCount = await getPdfPageCount(buffer);
+        // Get page count from stored document
+        const pageCount = doc.pageCount;
         setNumPages(pageCount);
 
         // Select all pages by default
@@ -117,17 +118,15 @@ export default function SeleccionarPaginasPage() {
         // Handle specific error types with descriptive messages
         if (err instanceof EncryptedPdfError) {
           setError(err.message);
-        } else if (err instanceof InvalidBase64Error) {
-          setError(err.message);
         } else {
-          setError("Error al cargar el documento. Verifica que el archivo no este corrupto.");
+          setError("Error al cargar el documento. Por favor sube un PDF nuevamente.");
         }
       }
       setLoading(false);
     };
 
     loadPdf();
-  }, []);
+  }, [getDocument]);
 
   const togglePage = useCallback((pageNum: number) => {
     setSelectedPages((prev) => {
@@ -167,32 +166,33 @@ export default function SeleccionarPaginasPage() {
   }, [numPages]);
 
   const handleContinue = async () => {
-    if (!pdfData || selectedPages.size === 0) return;
+    if (!pdfData || selectedPages.size === 0 || !documentId) return;
 
     setProcessing(true);
     try {
       const sortedPages = Array.from(selectedPages).sort((a, b) => a - b);
       const processedPdf = await processPdfForPrint(pdfData, sortedPages);
 
-      // Save processed PDF to sessionStorage
-      const base64 = arrayBufferToBase64(processedPdf.buffer as ArrayBuffer);
-      sessionStorage.setItem("documentPdfData", base64);
+      // Update document in IndexedDB with processed PDF
+      await updateDocument(documentId, {
+        pdfData: processedPdf.buffer as ArrayBuffer,
+        pageCount: selectedPages.size,
+        selectedPages: sortedPages,
+      });
 
-      // Update document info
-      const docInfo = sessionStorage.getItem("uploadedDocument");
+      // Update document info in localStorage
+      const docInfo = localStorage.getItem("uploadedDocument");
       if (docInfo) {
         const info = JSON.parse(docInfo);
         info.pageCount = selectedPages.size;
         info.selectedPages = sortedPages;
-        sessionStorage.setItem("uploadedDocument", JSON.stringify(info));
+        localStorage.setItem("uploadedDocument", JSON.stringify(info));
       }
 
       router.push("/documento/opciones");
     } catch (err) {
       // Handle specific error types with descriptive messages
       if (err instanceof EncryptedPdfError) {
-        setError(err.message);
-      } else if (err instanceof InvalidBase64Error) {
         setError(err.message);
       } else if (err instanceof PdfScalingError) {
         setError(err.message);

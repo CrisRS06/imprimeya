@@ -47,9 +47,21 @@ export async function GET() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = supabase as any;
 
-    // Calcular fechas de referencia
+    // Calcular fechas de referencia usando zona horaria de Costa Rica
+    const TIMEZONE = "America/Costa_Rica";
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    // Obtener fecha actual en Costa Rica
+    const costaRicaDate = new Date(now.toLocaleString("en-US", { timeZone: TIMEZONE }));
+    const todayStart = new Date(
+      costaRicaDate.getFullYear(),
+      costaRicaDate.getMonth(),
+      costaRicaDate.getDate()
+    );
+    // Convertir de vuelta a UTC para queries
+    const tzOffset = now.getTime() - costaRicaDate.getTime();
+    todayStart.setTime(todayStart.getTime() + tzOffset);
+
     const weekStart = new Date(todayStart);
     weekStart.setDate(weekStart.getDate() - 7);
     const monthStart = new Date(todayStart);

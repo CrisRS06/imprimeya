@@ -67,6 +67,7 @@ function ResumenPageContent() {
   const [sheetsCount, setSheetsCount] = useState(1);
   const [totalQuantity, setTotalQuantity] = useState<number>(1);
   const [isColor, setIsColor] = useState<boolean>(true); // Para documentos
+  const [doubleSided, setDoubleSided] = useState<boolean>(false); // Para documentos - duplex
   const [fillMode, setFillMode] = useState<"fill" | "fit">("fill"); // fill=cover, fit=contain
 
   // Calcular precio
@@ -153,6 +154,12 @@ function ResumenPageContent() {
     const colorSetting = localStorage.getItem("documentIsColor");
     if (colorSetting !== null) {
       setIsColor(colorSetting === "true");
+    }
+
+    // Double sided (para documentos) - usa localStorage para persistir
+    const doubleSidedSetting = localStorage.getItem("documentDoubleSided");
+    if (doubleSidedSetting !== null) {
+      setDoubleSided(doubleSidedSetting === "true");
     }
 
     // Fill mode (fill=cover, fit=contain)
@@ -262,6 +269,7 @@ function ResumenPageContent() {
               totalPhotos: totalQuantity,
               photosWithQuantities: photos,
               fillMode,
+              doubleSided: productType === "document" ? doubleSided : undefined,
             },
           }),
         });
@@ -321,6 +329,7 @@ function ResumenPageContent() {
     localStorage.removeItem("documentIsColor");
     localStorage.removeItem("documentSelectedPaper");
     localStorage.removeItem("documentSheetsCount");
+    localStorage.removeItem("documentDoubleSided");
     router.push("/");
   };
 
@@ -562,6 +571,15 @@ function ResumenPageContent() {
                     <span className="text-gray-500">Tipo</span>
                     <span className="font-medium text-gray-900">
                       {isColor ? "Color" : "Blanco y Negro"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500">Caras</span>
+                    <span className={cn(
+                      "font-medium",
+                      doubleSided ? "text-blue-600" : "text-gray-900"
+                    )}>
+                      {doubleSided ? "Doble cara (Duplex)" : "Una cara"}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">

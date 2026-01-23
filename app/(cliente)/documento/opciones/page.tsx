@@ -13,6 +13,8 @@ import {
   CircleIcon,
   PrinterIcon,
   LoaderIcon,
+  LayersIcon,
+  FileIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -40,6 +42,7 @@ export default function DocumentoOpcionesPage() {
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [isColor, setIsColor] = useState(true);
   const [selectedPaper, setSelectedPaper] = useState<PaperType>("bond_normal");
+  const [doubleSided, setDoubleSided] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
   // Load document metadata from localStorage
@@ -125,6 +128,7 @@ export default function DocumentoOpcionesPage() {
       localStorage.setItem("documentIsColor", isColor.toString());
       localStorage.setItem("documentSelectedPaper", selectedPaper);
       localStorage.setItem("documentSheetsCount", (document.pageCount || 1).toString());
+      localStorage.setItem("documentDoubleSided", doubleSided.toString());
 
       // 7. Navegar al resumen
       router.push("/resumen?type=document");
@@ -160,6 +164,7 @@ export default function DocumentoOpcionesPage() {
               localStorage.removeItem("documentIsColor");
               localStorage.removeItem("documentSelectedPaper");
               localStorage.removeItem("documentSheetsCount");
+              localStorage.removeItem("documentDoubleSided");
               router.push("/documento");
             }}
             className="p-2 -ml-2 text-gray-600 hover:text-gray-900 transition-colors"
@@ -359,6 +364,104 @@ export default function DocumentoOpcionesPage() {
                 </motion.button>
               );
             })}
+          </div>
+        </section>
+
+        {/* Double sided option */}
+        <section className="px-4 pb-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            Caras de impresion
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            {/* Una cara */}
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setDoubleSided(false)}
+              className={cn(
+                "relative p-4 rounded-2xl border-2 transition-all text-center",
+                !doubleSided
+                  ? "border-emerald-500 bg-emerald-50 shadow-md"
+                  : "border-gray-200 bg-white hover:border-gray-300"
+              )}
+            >
+              <div
+                className={cn(
+                  "w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center",
+                  !doubleSided ? "bg-emerald-100" : "bg-gray-100"
+                )}
+              >
+                <FileIcon
+                  className={cn(
+                    "w-6 h-6",
+                    !doubleSided ? "text-emerald-600" : "text-gray-400"
+                  )}
+                />
+              </div>
+              <span
+                className={cn(
+                  "font-semibold block",
+                  !doubleSided ? "text-emerald-700" : "text-gray-700"
+                )}
+              >
+                Una cara
+              </span>
+              <span className={cn(
+                "text-sm",
+                !doubleSided ? "text-emerald-600" : "text-gray-500"
+              )}>
+                Normal
+              </span>
+              {!doubleSided && (
+                <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                  <CheckCircleIcon className="w-3 h-3 text-white" />
+                </div>
+              )}
+            </motion.button>
+
+            {/* Doble cara */}
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setDoubleSided(true)}
+              className={cn(
+                "relative p-4 rounded-2xl border-2 transition-all text-center",
+                doubleSided
+                  ? "border-emerald-500 bg-emerald-50 shadow-md"
+                  : "border-gray-200 bg-white hover:border-gray-300"
+              )}
+            >
+              <div
+                className={cn(
+                  "w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center",
+                  doubleSided ? "bg-emerald-100" : "bg-gray-100"
+                )}
+              >
+                <LayersIcon
+                  className={cn(
+                    "w-6 h-6",
+                    doubleSided ? "text-emerald-600" : "text-gray-400"
+                  )}
+                />
+              </div>
+              <span
+                className={cn(
+                  "font-semibold block",
+                  doubleSided ? "text-emerald-700" : "text-gray-700"
+                )}
+              >
+                Doble cara
+              </span>
+              <span className={cn(
+                "text-sm",
+                doubleSided ? "text-emerald-600" : "text-gray-500"
+              )}>
+                Duplex
+              </span>
+              {doubleSided && (
+                <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                  <CheckCircleIcon className="w-3 h-3 text-white" />
+                </div>
+              )}
+            </motion.button>
           </div>
         </section>
 

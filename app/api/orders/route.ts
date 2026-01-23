@@ -287,6 +287,7 @@ export async function POST(request: NextRequest) {
       sizeName: body.sizeName,
       paperType: body.paperType,
       dbPaperType, // Valor mapeado usado en BD
+      // doubleSided ya viene en body.designData si es documento
     };
 
     const orderData = {
@@ -401,7 +402,7 @@ export async function GET(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = supabase as any;
 
-    // Select solo campos necesarios para listado (evita traer design_data JSONB pesado)
+    // Select campos necesarios para listado (incluye design_data para extraer doubleSided)
     let query = sb
       .from("orders")
       .select(`
@@ -416,6 +417,7 @@ export async function GET(request: NextRequest) {
         notes,
         created_at,
         updated_at,
+        design_data,
         print_sizes (name, width_inches, height_inches),
         paper_options (type, display_name)
       `)
@@ -444,16 +446,22 @@ export async function GET(request: NextRequest) {
       const isColor = order.is_color !== false; // default true
       const printCost = isColor ? PRINT_COSTS.color : PRINT_COSTS.blackWhite;
 
-      // Obtener tipo de papel desde paper_options (design_data no se trae en listado)
+      // Obtener tipo de papel desde paper_options
       const paperOptions = order.paper_options as { type?: string } | null;
       const dbPaperType = (paperOptions?.type || "bond_normal") as PaperType;
       const paperSurcharge = PAPER_SURCHARGES[dbPaperType] || 0;
+
+      // Extraer doubleSided desde design_data (para documentos)
+      const designData = order.design_data as { doubleSided?: boolean } | null;
+      const isDoubleSided = designData?.doubleSided === true;
 
       return {
         ...order,
         isColor,
         printCost,
         paperSurcharge,
+        isDoubleSided,
+        design_data: undefined, // No enviar design_data completo al cliente
       };
     }) || [];
 

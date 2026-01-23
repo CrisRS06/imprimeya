@@ -67,6 +67,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const sizeName = designData.sizeName || order.print_sizes?.name;
     const photosWithQuantities = designData.photosWithQuantities || [];
     const fillMode = designData.fillMode || "fill"; // "fill" = cover, "fit" = contain
+    const isDoubleSided = designData.doubleSided === true; // Para documentos duplex
 
     // Calcular desglose de precio
     const isColor = order.is_color !== false; // default true
@@ -99,6 +100,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         photosWithQuantities,
         totalPhotos: designData.totalPhotos || 1,
         fillMode,
+        isDoubleSided,
       },
     });
   } catch (error) {

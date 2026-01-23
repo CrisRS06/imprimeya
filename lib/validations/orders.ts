@@ -39,9 +39,11 @@ export const DesignDataSchema = z
     dbPaperType: PaperTypeSchema.optional(),
     // Photo specific
     photos: z.array(z.record(z.string(), z.unknown())).optional(),
+    fillMode: z.enum(["fill", "fit"]).optional(),
     // Document specific
     pageCount: z.number().int().positive().max(500).optional(),
     isColor: z.boolean().optional(),
+    doubleSided: z.boolean().optional(), // Impresion doble cara (duplex)
     // Poster specific
     posterConfig: z.record(z.string(), z.unknown()).optional(),
   })

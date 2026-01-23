@@ -23,6 +23,7 @@ interface OrderCardProps {
     isColor?: boolean;
     printCost?: number;
     paperSurcharge?: number;
+    isDoubleSided?: boolean;
   };
   onClick?: () => void;
   onDelete?: () => void;
@@ -67,11 +68,16 @@ export function OrderCard({ order, onClick, onDelete, isNew, className }: OrderC
         {/* Info principal */}
         <div className="flex-1 min-w-0">
           {/* Codigo y estado */}
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-2 flex-wrap">
             <span className="font-mono font-bold text-lg text-black">
               {formatOrderCode(order.code)}
             </span>
             <StatusBadge status={order.status} size="sm" />
+            {order.isDoubleSided && (
+              <span className="px-2 py-0.5 text-xs font-bold bg-blue-100 text-blue-700 rounded-full uppercase">
+                Duplex
+              </span>
+            )}
           </div>
 
           {/* Detalles */}

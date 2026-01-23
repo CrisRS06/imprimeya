@@ -290,6 +290,7 @@ export default function PrintPage({
           y: pos.y * DPI,
           width: pos.width * DPI,
           height: pos.height * DPI,
+          fillMode: data.print.fillMode, // Pasar modo de llenado (fill=cover, fit=contain)
         }))
         .filter((p) => p.imageUrl),
     }));

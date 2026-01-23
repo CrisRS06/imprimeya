@@ -10,6 +10,7 @@ export interface PrintPhotoData {
   y: number;      // en pixels
   width: number;  // en pixels
   height: number; // en pixels
+  fillMode?: "fill" | "fit"; // fill=cover (recorta), fit=contain (ajusta sin recortar)
 }
 
 export interface PrintPageData {
@@ -75,8 +76,14 @@ function generatePrintHTML(pages: PrintPageData[], orderCode: string): string {
 
         .photo {
           position: absolute;
-          object-fit: cover;
           max-width: none;
+        }
+        .photo-fill {
+          object-fit: cover;
+        }
+        .photo-fit {
+          object-fit: contain;
+          background-color: white;
         }
 
         @media print {
@@ -112,7 +119,7 @@ function generatePrintHTML(pages: PrintPageData[], orderCode: string): string {
             .map(
               (photo) => `
             <img
-              class="photo"
+              class="photo ${photo.fillMode === 'fit' ? 'photo-fit' : 'photo-fill'}"
               src="${photo.imageUrl}"
               crossorigin="anonymous"
               style="left:${photo.x}px;top:${photo.y}px;width:${photo.width}px;height:${photo.height}px;"

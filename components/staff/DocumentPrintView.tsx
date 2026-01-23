@@ -11,6 +11,7 @@ import {
   Loader2Icon,
   CheckCircleIcon,
   FileTextIcon,
+  AlertTriangleIcon,
 } from "lucide-react";
 
 interface DocumentPrintViewProps {
@@ -30,6 +31,7 @@ interface DocumentPrintViewProps {
   print: {
     imageUrls: string[];
     totalPhotos: number;
+    isDoubleSided?: boolean;
   };
   onMarkDelivered: () => Promise<void>;
   markingDelivered: boolean;
@@ -141,6 +143,25 @@ export function DocumentPrintView({
               {order.paperDisplayName}
             </p>
           </div>
+
+          {/* Banner de DOBLE CARA - MUY PROMINENTE */}
+          {print.isDoubleSided && (
+            <div className="bg-blue-100 border-2 border-blue-500 rounded-xl px-6 py-4 mb-4">
+              <div className="flex items-center gap-3 mb-2">
+                <AlertTriangleIcon className="w-6 h-6 text-blue-600" />
+                <p className="text-blue-700 text-sm font-bold uppercase">
+                  CONFIGURAR IMPRESORA
+                </p>
+              </div>
+              <p className="text-3xl font-bold text-blue-900 uppercase tracking-wide mb-3">
+                DOBLE CARA (DUPLEX)
+              </p>
+              <div className="text-sm text-blue-800 space-y-1">
+                <p>1. Seleccionar "Imprimir a doble cara" en opciones de impresora</p>
+                <p>2. Voltear por el borde largo</p>
+              </div>
+            </div>
+          )}
 
           {/* Detalles del documento */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-sm mb-4">

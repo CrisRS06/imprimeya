@@ -37,12 +37,16 @@ import { showErrorToast } from "@/lib/utils/toast-helpers";
 const productTypeLabels: Record<ProductType, string> = {
   photo: "Imágenes",
   document: "Documento",
+  single_photo: "Foto simple",
+  collage: "Collage",
   poster: "Poster",
 };
 
 const productIcons: Record<ProductType, typeof CameraIcon> = {
   photo: CameraIcon,
   document: FileTextIcon,
+  single_photo: CameraIcon,
+  collage: CameraIcon,
   poster: MaximizeIcon,
 };
 

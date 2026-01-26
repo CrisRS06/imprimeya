@@ -55,6 +55,20 @@ const STATUS_CONFIG: Record<
     color: "text-primary",
     bgColor: "bg-primary/20",
   },
+  processing: {
+    label: "En proceso",
+    description: "Tu pedido se esta imprimiendo",
+    icon: ClockIcon,
+    color: "text-amber-600",
+    bgColor: "bg-amber-100",
+  },
+  ready: {
+    label: "Listo",
+    description: "Tu pedido esta listo para recoger",
+    icon: PackageIcon,
+    color: "text-blue-600",
+    bgColor: "bg-blue-100",
+  },
   delivered: {
     label: "Entregado",
     description: "Pedido completado",

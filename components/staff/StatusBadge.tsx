@@ -18,6 +18,16 @@ const STATUS_CONFIG: Record<
     bgColor: "bg-primary/20",
     textColor: "text-primary",
   },
+  processing: {
+    label: "En proceso",
+    bgColor: "bg-amber-100",
+    textColor: "text-amber-700",
+  },
+  ready: {
+    label: "Listo",
+    bgColor: "bg-blue-100",
+    textColor: "text-blue-700",
+  },
   delivered: {
     label: "Entregado",
     bgColor: "bg-emerald-100",

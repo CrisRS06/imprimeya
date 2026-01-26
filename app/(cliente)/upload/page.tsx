@@ -22,18 +22,24 @@ interface UploadedFile {
 const productTitles: Record<ProductType, string> = {
   photo: "Subir foto",
   document: "Subir documento",
+  single_photo: "Subir foto",
+  collage: "Subir fotos",
   poster: "Subir foto para poster",
 };
 
 const productDescriptions: Record<ProductType, string> = {
   photo: "Selecciona la foto que queres imprimir",
   document: "Selecciona el documento que queres imprimir",
+  single_photo: "Selecciona la foto que queres imprimir",
+  collage: "Selecciona las fotos para tu collage",
   poster: "Selecciona la foto para tu poster",
 };
 
 const maxFilesPerType: Record<ProductType, number> = {
   photo: 1,
   document: 1,
+  single_photo: 1,
+  collage: 10,
   poster: 1,
 };
 

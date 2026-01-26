@@ -22,7 +22,7 @@ interface DropZoneProps {
   onFilesReady: (files: UploadedFile[]) => void;
   maxFiles?: number;
   maxSizeMB?: number;
-  productType: "photo" | "document" | "collage" | "poster";
+  productType: "photo" | "document" | "single_photo" | "collage" | "poster";
 }
 
 export function DropZone({

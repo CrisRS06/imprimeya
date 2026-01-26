@@ -5,7 +5,8 @@ export type { Database, Tables, TablesInsert, TablesUpdate, Enums } from './data
 // ============================================
 // TIPOS DE PRODUCTO
 // ============================================
-export type ProductType = 'photo' | 'document' | 'poster'
+// Incluye todos los valores del enum product_type en la BD
+export type ProductType = 'photo' | 'document' | 'single_photo' | 'collage' | 'poster'
 
 // Mantener compatibilidad con codigo existente (deprecated)
 export type LegacyProductType = 'single_photo' | 'collage' | 'poster'
@@ -19,12 +20,14 @@ export type PaperType = 'bond_normal' | 'opalina' | 'cartulina_lino' | 'sticker_
 export type LegacyPaperType = 'normal' | 'glossy' | 'matte' | 'sticker' | 'opalina' | 'lino'
 
 // ============================================
-// ESTADO DE ORDEN (Simplificado)
+// ESTADO DE ORDEN (Completo - sincronizado con BD)
 // ============================================
 // pending: Pedido nuevo, esperando ser procesado
+// processing: Pedido en proceso de impresión
+// ready: Pedido listo para entregar
 // delivered: Pedido impreso, cobrado y entregado
 // cancelled: Pedido cancelado
-export type OrderStatus = 'pending' | 'delivered' | 'cancelled'
+export type OrderStatus = 'pending' | 'processing' | 'ready' | 'delivered' | 'cancelled'
 
 // ============================================
 // TIPOS DE FILA PARA USO DIRECTO

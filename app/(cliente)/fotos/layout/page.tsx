@@ -14,41 +14,27 @@ import { LayoutSelector, type FillMode } from "@/components/fotos/LayoutSelector
 import { LayoutPreview } from "@/components/fotos/LayoutPreview";
 import type { PhotoLayout } from "@/lib/supabase/types";
 import { getLayoutById } from "@/lib/config/photo-layouts";
-import type { PhotoWithQuantity } from "@/lib/types/photos";
+import { usePhotoStorage, type PhotoWithQuantity } from "@/hooks/usePhotoStorage";
 
 export default function FotosLayoutPage() {
   const router = useRouter();
   const { state } = useOrder();
+  const { getPhotos, savePhotos, getLayoutId, saveLayoutId, getFillMode, saveFillMode, saveQuantity } = usePhotoStorage();
   const [photos, setPhotos] = useState<PhotoWithQuantity[]>([]);
   const [selectedLayout, setSelectedLayout] = useState<PhotoLayout | null>(null);
   const [totalQuantity, setTotalQuantity] = useState<number>(1);
   const [fillMode, setFillMode] = useState<FillMode>("fill");
 
-  // Cargar fotos desde sessionStorage o contexto
+  // Cargar fotos desde localStorage o contexto
   useEffect(() => {
-    const stored = sessionStorage.getItem("uploadedPhotos");
+    const stored = getPhotos();
     if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as PhotoWithQuantity[];
-        // Asegurarse de que cada foto tenga quantity
-        const withQuantity = parsed.map((p) => ({
-          ...p,
-          quantity: p.quantity || 1,
-        }));
-        setPhotos(withQuantity);
-      } catch {
-        // Si falla, usar imagenes del contexto
-        if (state.images.length > 0) {
-          setPhotos(
-            state.images.map((img) => ({
-              id: img.id,
-              preview: img.preview,
-              name: img.originalName,
-              quantity: 1,
-            }))
-          );
-        }
-      }
+      // Asegurarse de que cada foto tenga quantity
+      const withQuantity = stored.map((p) => ({
+        ...p,
+        quantity: p.quantity || 1,
+      }));
+      setPhotos(withQuantity);
     } else if (state.images.length > 0) {
       setPhotos(
         state.images.map((img) => ({
@@ -61,7 +47,7 @@ export default function FotosLayoutPage() {
     }
 
     // Cargar layout guardado si existe
-    const savedLayoutId = sessionStorage.getItem("selectedLayoutId");
+    const savedLayoutId = getLayoutId();
     if (savedLayoutId) {
       const layout = getLayoutById(savedLayoutId);
       if (layout) {
@@ -70,11 +56,11 @@ export default function FotosLayoutPage() {
     }
 
     // Cargar fillMode guardado
-    const savedFillMode = sessionStorage.getItem("fillMode");
-    if (savedFillMode === "fill" || savedFillMode === "fit") {
+    const savedFillMode = getFillMode();
+    if (savedFillMode) {
       setFillMode(savedFillMode);
     }
-  }, [state.images]);
+  }, [state.images, getPhotos, getLayoutId, getFillMode]);
 
   // Handler cuando cambia la seleccion del layout
   const handleLayoutSelect = useCallback((layout: PhotoLayout, qty: number, fill: FillMode) => {
@@ -86,9 +72,9 @@ export default function FotosLayoutPage() {
   // Handler cuando cambian las cantidades de las fotos
   const handlePhotosChange = useCallback((updatedPhotos: PhotoWithQuantity[]) => {
     setPhotos(updatedPhotos);
-    // Actualizar sessionStorage con las nuevas cantidades
-    sessionStorage.setItem("uploadedPhotos", JSON.stringify(updatedPhotos));
-  }, []);
+    // Actualizar localStorage con las nuevas cantidades
+    savePhotos(updatedPhotos);
+  }, [savePhotos]);
 
   const handleContinue = () => {
     if (!selectedLayout) return;
@@ -102,12 +88,12 @@ export default function FotosLayoutPage() {
       }];
     }
 
-    // Guardar seleccion en sessionStorage
-    sessionStorage.setItem("selectedLayoutId", selectedLayout.id);
-    sessionStorage.setItem("photoQuantity", totalQuantity.toString());
-    sessionStorage.setItem("fillMode", fillMode);
+    // Guardar seleccion en localStorage (persiste tras refresh)
+    saveLayoutId(selectedLayout.id);
+    saveQuantity(totalQuantity);
+    saveFillMode(fillMode);
     // Guardar fotos con cantidad correcta (importante para modo single-photo)
-    sessionStorage.setItem("uploadedPhotos", JSON.stringify(photosToSave));
+    savePhotos(photosToSave);
 
     // Navegar a seleccion de papel
     router.push("/fotos/papel");

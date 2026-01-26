@@ -22,6 +22,7 @@ import { compressImage, formatFileSize } from "@/lib/utils/image-compressor";
 import { QualityPulse } from "@/components/feedback/QualityIndicator";
 import { ProcessingOverlay } from "@/components/feedback/LoadingStates";
 import { MAX_UPLOAD_SIZE, UPLOAD_TIMEOUT_MS, MAX_FILES_PER_SESSION, MAX_CONCURRENT_UPLOADS } from "@/lib/constants";
+import { usePhotoStorage, type PhotoWithQuantity } from "@/hooks/usePhotoStorage";
 
 interface UploadedFile {
   id: string;
@@ -71,6 +72,7 @@ async function processWithConcurrency<T, R>(
 export default function FotosPage() {
   const router = useRouter();
   const { setProductType, addImages, clearImages } = useOrder();
+  const { savePhotos, saveSessionId, getSessionId } = usePhotoStorage();
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -86,29 +88,26 @@ export default function FotosPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-save uploaded photos to sessionStorage (prevents data loss on navigation)
+  // Auto-save uploaded photos to localStorage (prevents data loss on navigation/refresh)
   useEffect(() => {
     const successfulUploads = files.filter(
       (f) => f.status === "done" && f.storagePath && f.publicUrl
     );
 
     if (successfulUploads.length > 0) {
-      sessionStorage.setItem(
-        "uploadedPhotos",
-        JSON.stringify(
-          successfulUploads.map((f) => ({
-            id: f.id,
-            preview: f.publicUrl || f.preview,
-            name: f.file.name,
-            storagePath: f.storagePath,
-            publicUrl: f.publicUrl,
-            validation: f.validation,
-            quantity: 1,
-          }))
-        )
+      savePhotos(
+        successfulUploads.map((f) => ({
+          id: f.id,
+          preview: f.publicUrl || f.preview,
+          name: f.file.name,
+          storagePath: f.storagePath,
+          publicUrl: f.publicUrl,
+          validation: f.validation,
+          quantity: 1,
+        }))
       );
     }
-  }, [files]);
+  }, [files, savePhotos]);
 
   const processFile = useCallback(async (file: File): Promise<UploadedFile> => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -164,7 +163,7 @@ export default function FotosPage() {
     try {
       const formData = new FormData();
       formData.append("file", processedFile);
-      formData.append("sessionId", sessionStorage.getItem("uploadSessionId") || id);
+      formData.append("sessionId", getSessionId() || id);
 
       // Crear AbortController para timeout
       const controller = new AbortController();
@@ -185,7 +184,7 @@ export default function FotosPage() {
           publicUrl = data.data.publicUrl;
 
           if (data.data.sessionId) {
-            sessionStorage.setItem("uploadSessionId", data.data.sessionId);
+            saveSessionId(data.data.sessionId);
           }
         } else {
           // Manejar errores HTTP específicos
@@ -224,7 +223,7 @@ export default function FotosPage() {
       validation,
       error: uploadError,
     };
-  }, []);
+  }, [getSessionId, saveSessionId]);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
@@ -380,19 +379,16 @@ export default function FotosPage() {
       }))
     );
 
-    sessionStorage.setItem(
-      "uploadedPhotos",
-      JSON.stringify(
-        files.map((f) => ({
-          id: f.id,
-          preview: f.publicUrl || f.preview,
-          name: f.file.name,
-          storagePath: f.storagePath,
-          publicUrl: f.publicUrl,
-          validation: f.validation,
-          quantity: 1,
-        }))
-      )
+    savePhotos(
+      files.map((f) => ({
+        id: f.id,
+        preview: f.publicUrl || f.preview,
+        name: f.file.name,
+        storagePath: f.storagePath,
+        publicUrl: f.publicUrl,
+        validation: f.validation,
+        quantity: 1,
+      }))
     );
 
     router.push("/fotos/layout");

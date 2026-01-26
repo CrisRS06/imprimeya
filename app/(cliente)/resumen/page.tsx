@@ -31,6 +31,8 @@ import type { ProductType, PaperType, PhotoLayout } from "@/lib/supabase/types";
 import { getLayoutById } from "@/lib/config/photo-layouts";
 import { PAPERS } from "@/lib/config/papers";
 import { calculatePrice, formatPrice } from "@/lib/utils/price-calculator";
+import { usePhotoStorage, type PhotoWithQuantity } from "@/hooks/usePhotoStorage";
+import { showErrorToast } from "@/lib/utils/toast-helpers";
 
 const productTypeLabels: Record<ProductType, string> = {
   photo: "Imágenes",
@@ -44,12 +46,11 @@ const productIcons: Record<ProductType, typeof CameraIcon> = {
   poster: MaximizeIcon,
 };
 
-import type { PhotoWithQuantity } from "@/lib/types/photos";
-
 function ResumenPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { state, resetOrder } = useOrder();
+  const { getPhotos, getLayoutId, getPaper, getSheetsCount, getFillMode, clearAll: clearPhotoStorage } = usePhotoStorage();
 
   const productType =
     (searchParams.get("type") as ProductType) || state.productType || "photo";
@@ -83,7 +84,7 @@ function ResumenPageContent() {
     });
   }, [selectedPaper, sheetsCount, productType, isColor, selectedLayout]);
 
-  // Load data from sessionStorage
+  // Load data from storage
   useEffect(() => {
     // Para documentos: cargar storagePath del PDF desde localStorage (persiste si recarga)
     if (productType === "document") {
@@ -100,23 +101,18 @@ function ResumenPageContent() {
         } as PhotoWithQuantity]);
       }
     } else {
-      // Photos con cantidades (para fotos)
-      const storedPhotos = sessionStorage.getItem("uploadedPhotos");
+      // Photos con cantidades (para fotos) - usa localStorage via hook
+      const storedPhotos = getPhotos();
       if (storedPhotos) {
-        try {
-          const parsed = JSON.parse(storedPhotos) as PhotoWithQuantity[];
-          setPhotos(parsed.map((p) => ({ ...p, quantity: p.quantity || 1 })));
-          // Calcular total desde las fotos
-          const total = parsed.reduce((sum, p) => sum + (p.quantity || 1), 0);
-          setTotalQuantity(total);
-        } catch {
-          // fallback
-        }
+        setPhotos(storedPhotos.map((p) => ({ ...p, quantity: p.quantity || 1 })));
+        // Calcular total desde las fotos
+        const total = storedPhotos.reduce((sum, p) => sum + (p.quantity || 1), 0);
+        setTotalQuantity(total);
       }
     }
 
-    // Layout
-    const layoutId = sessionStorage.getItem("selectedLayoutId");
+    // Layout (solo para fotos)
+    const layoutId = getLayoutId();
     if (layoutId) {
       const layout = getLayoutById(layoutId);
       if (layout) {
@@ -124,29 +120,29 @@ function ResumenPageContent() {
       }
     }
 
-    // Paper - documentos usan localStorage, fotos usan sessionStorage
+    // Paper - documentos usan localStorage directo, fotos usan hook
     if (productType === "document") {
       const paper = localStorage.getItem("documentSelectedPaper") as PaperType;
       if (paper) {
         setSelectedPaper(paper);
       }
     } else {
-      const paper = sessionStorage.getItem("selectedPaper") as PaperType;
+      const paper = getPaper() as PaperType | null;
       if (paper) {
         setSelectedPaper(paper);
       }
     }
 
-    // Sheets count - documentos usan localStorage, fotos usan sessionStorage
+    // Sheets count - documentos usan localStorage directo, fotos usan hook
     if (productType === "document") {
       const sheets = localStorage.getItem("documentSheetsCount");
       if (sheets) {
         setSheetsCount(parseInt(sheets, 10));
       }
     } else {
-      const sheets = sessionStorage.getItem("sheetsCount");
+      const sheets = getSheetsCount();
       if (sheets) {
-        setSheetsCount(parseInt(sheets, 10));
+        setSheetsCount(sheets);
       }
     }
 
@@ -162,12 +158,12 @@ function ResumenPageContent() {
       setDoubleSided(doubleSidedSetting === "true");
     }
 
-    // Fill mode (fill=cover, fit=contain)
-    const storedFillMode = sessionStorage.getItem("fillMode") as "fill" | "fit" | null;
+    // Fill mode (fill=cover, fit=contain) - usa hook
+    const storedFillMode = getFillMode();
     if (storedFillMode) {
       setFillMode(storedFillMode);
     }
-  }, [productType]);
+  }, [productType, getPhotos, getLayoutId, getPaper, getSheetsCount, getFillMode]);
 
   // Nota: El código se genera en el servidor al confirmar
   // No mostramos preview para evitar confusión si hay colisión
@@ -305,7 +301,10 @@ function ResumenPageContent() {
       }, 1500);
     } catch (error) {
       console.error("Error submitting order:", error);
-      toast.error("Error al enviar pedido. Intenta de nuevo.");
+      showErrorToast({
+        error: error instanceof Error ? error : "Error desconocido",
+        onRetry: handleSubmitOrder,
+      });
       setIsSubmitting(false);
     }
   };
@@ -313,15 +312,8 @@ function ResumenPageContent() {
   // Go home
   const handleGoHome = () => {
     resetOrder();
-    // Limpiar datos de fotos
-    sessionStorage.removeItem("uploadedFiles");
-    sessionStorage.removeItem("uploadedPhotos");
-    sessionStorage.removeItem("selectedLayoutId");
-    sessionStorage.removeItem("selectedPaper");
-    sessionStorage.removeItem("sheetsCount");
-    sessionStorage.removeItem("repeatMode");
-    sessionStorage.removeItem("uploadSessionId");
-    sessionStorage.removeItem("fillMode");
+    // Limpiar datos de fotos (usa hook que limpia localStorage y sessionStorage legacy)
+    clearPhotoStorage();
     // Limpiar datos de documentos (usan localStorage para persistir)
     localStorage.removeItem("currentDocumentId");
     localStorage.removeItem("uploadedDocument");

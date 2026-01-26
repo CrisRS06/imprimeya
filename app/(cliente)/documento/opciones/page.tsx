@@ -27,6 +27,7 @@ import {
   calculateDocumentPrice,
   formatPrice,
 } from "@/lib/utils/price-calculator";
+import { STORAGE_UPLOAD_TIMEOUT_MS } from "@/lib/constants";
 
 interface StoredDocument {
   name: string;
@@ -98,9 +99,9 @@ export default function DocumentoOpcionesPage() {
       const { signedUrl, path } = await urlResponse.json();
 
       // 5. Subir directo a Supabase con URL firmada (hasta 50MB)
-      // Timeout de 60 segundos para evitar que el cliente espere infinito
+      // Timeout para evitar que el cliente espere infinito
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      const timeoutId = setTimeout(() => controller.abort(), STORAGE_UPLOAD_TIMEOUT_MS);
 
       try {
         const uploadResponse = await fetch(signedUrl, {

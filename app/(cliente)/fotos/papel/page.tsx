@@ -16,30 +16,26 @@ import { LayoutPreviewCompact } from "@/components/fotos/LayoutPreview";
 import type { PaperType, PhotoLayout } from "@/lib/supabase/types";
 import { getLayoutById, calculateSheetsNeeded } from "@/lib/config/photo-layouts";
 import { getRecommendedPaper } from "@/lib/config/papers";
-import type { PhotoWithQuantity } from "@/lib/types/photos";
+import { usePhotoStorage, type PhotoWithQuantity } from "@/hooks/usePhotoStorage";
 
 export default function FotosPapelPage() {
   const router = useRouter();
   const { state, setPrintOptions } = useOrder();
+  const { getPhotos, getLayoutId, savePaper, saveSheetsCount, saveQuantity } = usePhotoStorage();
   const [photos, setPhotos] = useState<PhotoWithQuantity[]>([]);
   const [selectedLayout, setSelectedLayout] = useState<PhotoLayout | null>(null);
   const [selectedPaper, setSelectedPaper] = useState<PaperType>("fotografico");
 
-  // Cargar datos desde sessionStorage
+  // Cargar datos desde localStorage
   useEffect(() => {
     // Fotos con cantidades
-    const storedPhotos = sessionStorage.getItem("uploadedPhotos");
+    const storedPhotos = getPhotos();
     if (storedPhotos) {
-      try {
-        const parsed = JSON.parse(storedPhotos) as PhotoWithQuantity[];
-        setPhotos(parsed.map((p) => ({ ...p, quantity: p.quantity || 1 })));
-      } catch {
-        // fallback
-      }
+      setPhotos(storedPhotos.map((p) => ({ ...p, quantity: p.quantity || 1 })));
     }
 
     // Layout
-    const layoutId = sessionStorage.getItem("selectedLayoutId");
+    const layoutId = getLayoutId();
     if (layoutId) {
       const layout = getLayoutById(layoutId);
       if (layout) {
@@ -51,7 +47,7 @@ export default function FotosPapelPage() {
         }
       }
     }
-  }, []);
+  }, [getPhotos, getLayoutId]);
 
   // Calcular cantidad total de fotos
   const totalQuantity = useMemo(() => {
@@ -61,15 +57,15 @@ export default function FotosPapelPage() {
   const handleContinue = () => {
     if (!selectedLayout || !selectedPaper) return;
 
-    // Guardar papel seleccionado
-    sessionStorage.setItem("selectedPaper", selectedPaper);
+    // Guardar papel seleccionado en localStorage (persiste tras refresh)
+    savePaper(selectedPaper);
 
     // Calcular hojas necesarias basado en totalQuantity
     const sheetsCount = calculateSheetsNeeded(totalQuantity, selectedLayout.photos_per_sheet);
 
-    // Guardar en sessionStorage para el resumen
-    sessionStorage.setItem("sheetsCount", sheetsCount.toString());
-    sessionStorage.setItem("photoQuantity", totalQuantity.toString());
+    // Guardar en localStorage para el resumen
+    saveSheetsCount(sheetsCount);
+    saveQuantity(totalQuantity);
 
     // Actualizar contexto (compatibilidad con codigo existente)
     setPrintOptions({

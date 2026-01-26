@@ -32,7 +32,9 @@ interface OrderCardProps {
 }
 
 const PRODUCT_NAMES: Record<string, string> = {
-  single_photo: "Foto",
+  photo: "Fotos",
+  document: "Documento",
+  single_photo: "Foto",  // Legacy - mantener para órdenes antiguas
   collage: "Collage",
   poster: "Poster",
 };

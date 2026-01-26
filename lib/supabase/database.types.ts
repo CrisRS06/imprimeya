@@ -267,7 +267,7 @@ export type Database = {
         | "delivered"
         | "cancelled"
       paper_type: "normal" | "glossy" | "matte" | "sticker" | "opalina" | "lino"
-      product_type: "single_photo" | "collage" | "poster"
+      product_type: "photo" | "document" | "single_photo" | "collage" | "poster"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -403,7 +403,7 @@ export const Constants = {
         "cancelled",
       ],
       paper_type: ["normal", "glossy", "matte", "sticker", "opalina", "lino"],
-      product_type: ["single_photo", "collage", "poster"],
+      product_type: ["photo", "document", "single_photo", "collage", "poster"],
     },
   },
 } as const

@@ -72,7 +72,9 @@ const STATUS_CONFIG: Record<
 };
 
 const PRODUCT_NAMES: Record<string, string> = {
-  single_photo: "Foto simple",
+  photo: "Fotos",
+  document: "Documento",
+  single_photo: "Foto simple",  // Legacy
   collage: "Collage",
   poster: "Poster",
 };

@@ -73,6 +73,7 @@ export type Database = {
           delivered_at: string | null
           design_data: Json
           id: string
+          is_color: boolean | null
           notes: string | null
           original_images: string[] | null
           paper_option_id: string | null
@@ -102,6 +103,7 @@ export type Database = {
           delivered_at?: string | null
           design_data: Json
           id?: string
+          is_color?: boolean | null
           notes?: string | null
           original_images?: string[] | null
           paper_option_id?: string | null
@@ -131,6 +133,7 @@ export type Database = {
           delivered_at?: string | null
           design_data?: Json
           id?: string
+          is_color?: boolean | null
           notes?: string | null
           original_images?: string[] | null
           paper_option_id?: string | null

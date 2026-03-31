@@ -71,7 +71,7 @@ test.describe('Document Flow E2E', () => {
       // Select B/N
       await page.getByText(/blanco.*negro|b\/n/i).first().click();
 
-      // Price should be visible (either ₡50 or price text)
+      // Price should be visible (either ₡100 or price text)
       await expect(page.getByText(/₡|precio|costo/i).first()).toBeVisible();
     }
   });

@@ -39,10 +39,18 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.formData();
-    const file = formData.get("file") as File | null;
+    const fileEntry = formData.get("file");
     const sessionId = formData.get("sessionId") as string | null;
 
-    if (!file) {
+    if (!fileEntry || typeof fileEntry === "string") {
+      return NextResponse.json(
+        { error: "No se proporciono archivo válido" },
+        { status: 400 }
+      );
+    }
+    const file = fileEntry as File;
+
+    if (!file.name || !file.size) {
       return NextResponse.json(
         { error: "No se proporciono archivo" },
         { status: 400 }

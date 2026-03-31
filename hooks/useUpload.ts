@@ -276,6 +276,11 @@ export function useUpload(options: UseUploadOptions = {}) {
           (r): r is UploadedImage => r !== null
         );
 
+        const failedCount = files.length - successfulUploads.length;
+        if (failedCount > 0) {
+          onError?.(new Error(`${failedCount} archivo(s) no se pudieron subir`));
+        }
+
         setUploadedImages((prev) => [...prev, ...successfulUploads]);
         onComplete?.(successfulUploads);
 

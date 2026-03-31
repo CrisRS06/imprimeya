@@ -11,8 +11,8 @@ import type { PaperType, ProductType } from "@/lib/supabase/types";
 
 // Costo de impresión por tipo (fotos y documentos)
 export const PRINT_COSTS = {
-  color: 100,      // Impresión a color
-  blackWhite: 50,  // Impresión blanco y negro
+  color: 200,      // Impresión a color
+  blackWhite: 100,  // Impresión blanco y negro
 };
 
 // ===========================================
@@ -25,17 +25,30 @@ export const PAPER_SURCHARGES: Record<PaperType, number> = {
   opalina: 200,             // Papel opalina
   cartulina_lino: 200,      // Papel lino
   sticker_semigloss: 200,   // Papel sticker
-  fotografico: 400,         // Papel fotográfico
+  fotografico: 300,         // Papel fotográfico
 };
 
-// Multiplicadores legacy (mantenido para compatibilidad)
-export const PAPER_MULTIPLIERS: Record<PaperType, number> = {
-  bond_normal: 1.0,
-  opalina: 1.0,
-  cartulina_lino: 1.0,
-  sticker_semigloss: 1.0,
-  fotografico: 1.0,
+// Mapa de tipos de papel DB → frontend (para calcular recargos desde datos de BD)
+const DB_TO_FRONTEND_PAPER: Record<string, PaperType> = {
+  normal: "bond_normal",
+  glossy: "fotografico",
+  matte: "bond_normal",
+  sticker: "sticker_semigloss",
+  lino: "cartulina_lino",
+  opalina: "opalina",
 };
+
+/**
+ * Obtiene el recargo de papel a partir del tipo de BD (glossy, normal, etc.)
+ */
+export function getDbPaperSurcharge(dbPaperType: string): number {
+  const frontendType = DB_TO_FRONTEND_PAPER[dbPaperType];
+  if (!frontendType) {
+    console.warn(`[price-calculator] Tipo de papel desconocido: "${dbPaperType}". Usando recargo ₡0.`);
+    return 0;
+  }
+  return PAPER_SURCHARGES[frontendType] ?? 0;
+}
 
 // Nombres de papeles en español
 export const PAPER_NAMES: Record<PaperType, string> = {
@@ -72,11 +85,10 @@ interface PriceBreakdown {
  * Calcula el precio total de un pedido
  *
  * PRECIOS (por hoja):
- * - Impresión color: ₡100
- * - Impresión B&N: ₡50
- * - Recargo fotográfico: +₡400
- * - Recargo opalina/lino: +₡170
- * - Recargo sticker: +₡150
+ * - Impresión color: ₡200
+ * - Impresión B&N: ₡100
+ * - Recargo fotográfico: +₡300
+ * - Recargo opalina/lino/sticker: +₡200
  * - Bond normal: sin recargo
  */
 export function calculatePrice(input: PriceCalculationInput): PriceBreakdown {

@@ -36,11 +36,11 @@ export async function getStaffUser(): Promise<User | null> {
     // Verify staff role
     const isStaff =
       user.user_metadata?.role === "staff" ||
-      user.user_metadata?.is_staff === true ||
-      user.email?.endsWith("@simple.cr");
+      user.user_metadata?.is_staff === true;
 
     return isStaff ? user : null;
-  } catch {
+  } catch (error) {
+    console.error("[staff-check] Error verificando usuario staff:", error);
     return null;
   }
 }

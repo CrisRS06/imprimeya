@@ -29,6 +29,7 @@ interface UploadedDocument {
   pageCount: number | null;
   status: "processing" | "done" | "error";
   error?: string;
+  warning?: string;
 }
 
 const ACCEPTED_TYPES = {
@@ -114,6 +115,16 @@ export default function DocumentoPage() {
         };
       }
       pageCount = 1; // Default si no se puede determinar
+      return {
+        id,
+        file,
+        name: file.name,
+        type: fileType,
+        size: file.size,
+        pageCount,
+        status: "done",
+        warning: "No se pudo determinar el número de páginas. Verifica manualmente.",
+      };
     }
 
     return {
@@ -148,6 +159,10 @@ export default function DocumentoPage() {
       const processed = await processDocument(file);
       setDocument(processed);
       setIsProcessing(false);
+
+      if (processed.warning) {
+        toast.warning(processed.warning);
+      }
     },
     [processDocument]
   );

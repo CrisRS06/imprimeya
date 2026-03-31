@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -77,10 +77,17 @@ export default function StaffDashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<"today" | "week" | "month" | "allTime">("today");
+  const ordersRef = useRef<Order[]>([]);
+
+  // Mantener ref sincronizado con el estado
+  useEffect(() => {
+    ordersRef.current = orders;
+  }, [orders]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -91,6 +98,7 @@ export default function StaffDashboardPage() {
       }
     } catch (error) {
       console.error("Error fetching stats:", error);
+      // Stats no son críticas — no mostrar error por esto
     }
   }, []);
 
@@ -104,9 +112,10 @@ export default function StaffDashboardPage() {
       const data = await response.json();
 
       if (response.ok) {
-        // Detectar nuevos pedidos
-        if (orders.length > 0) {
-          const existingIds = new Set(orders.map((o) => o.id));
+        // Detectar nuevos pedidos usando ref (evita stale closure)
+        const currentOrders = ordersRef.current;
+        if (currentOrders.length > 0) {
+          const existingIds = new Set(currentOrders.map((o) => o.id));
           const newIds = data.orders
             .filter((o: Order) => !existingIds.has(o.id) && o.status === "pending")
             .map((o: Order) => o.id);
@@ -117,14 +126,17 @@ export default function StaffDashboardPage() {
         }
 
         setOrders(data.orders || []);
+        setFetchError(null);
+      } else {
+        setFetchError("Error cargando pedidos. Verifica tu conexión.");
       }
     } catch (error) {
       console.error("Error fetching orders:", error);
+      setFetchError("No se pudo conectar al servidor. Verifica tu conexión.");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   // Cargar pedidos y estadísticas inicial
@@ -301,6 +313,15 @@ export default function StaffDashboardPage() {
           Actualizar
         </Button>
       </div>
+
+      {/* Error banner */}
+      {fetchError && (
+        <Card className="border-destructive bg-destructive/10">
+          <CardContent className="py-3 text-center text-destructive text-sm">
+            {fetchError}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Orders list */}
       {loading ? (

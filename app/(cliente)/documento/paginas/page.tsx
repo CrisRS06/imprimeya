@@ -183,10 +183,14 @@ export default function SeleccionarPaginasPage() {
       // Update document info in localStorage
       const docInfo = localStorage.getItem("uploadedDocument");
       if (docInfo) {
-        const info = JSON.parse(docInfo);
-        info.pageCount = selectedPages.size;
-        info.selectedPages = sortedPages;
-        localStorage.setItem("uploadedDocument", JSON.stringify(info));
+        try {
+          const info = JSON.parse(docInfo);
+          info.pageCount = selectedPages.size;
+          info.selectedPages = sortedPages;
+          localStorage.setItem("uploadedDocument", JSON.stringify(info));
+        } catch {
+          // Si el JSON está corrupto, seguimos sin actualizar
+        }
       }
 
       router.push("/documento/opciones");

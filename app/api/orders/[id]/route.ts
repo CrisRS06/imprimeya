@@ -128,7 +128,26 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params;
-    const body = await request.json();
+
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Cuerpo de la solicitud no es JSON válido" },
+        { status: 400 }
+      );
+    }
+
+    // Validar status si se incluye
+    const validStatuses = ["pending", "processing", "ready", "delivered", "cancelled"];
+    if (body.status && !validStatuses.includes(body.status)) {
+      return NextResponse.json(
+        { error: `Estado inválido: ${body.status}` },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createServiceClient();
 
     // Campos permitidos para actualizar

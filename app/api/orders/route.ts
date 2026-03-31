@@ -6,6 +6,7 @@ import type { ProductType, OrderStatus, PaperType } from "@/lib/supabase/types";
 import {
   PRINT_COSTS,
   PAPER_SURCHARGES,
+  getDbPaperSurcharge,
 } from "@/lib/utils/price-calculator";
 import { checkRateLimit, getClientId, RATE_LIMITS } from "@/lib/utils/rate-limiter";
 import { log, generateRequestId } from "@/lib/logger";
@@ -110,7 +111,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const rawBody = await request.json();
+    let rawBody;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Cuerpo de la solicitud no es JSON válido" },
+        { status: 400 }
+      );
+    }
 
     // Check for idempotency key (header or auto-generated)
     let idempotencyKey = getIdempotencyKeyFromHeader(request.headers);
@@ -221,6 +230,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (attempts >= maxAttempts) {
+      log.error("Order code generation exhausted", undefined, { attempts: maxAttempts, requestId });
       return NextResponse.json(
         { error: "Error generando codigo unico" },
         { status: 500 }
@@ -263,13 +273,15 @@ export async function POST(request: NextRequest) {
     // =============================================
     // SISTEMA DE PRECIOS UNIFICADO
     // =============================================
-    // Impresión color: ₡100/hoja
-    // Impresión B&N: ₡50/hoja
-    // + Recargo papel: fotográfico +400, opalina/lino +170, sticker +150
+    // Impresión color: ₡200/hoja
+    // Impresión B&N: ₡100/hoja
+    // + Recargo papel: fotográfico +300, opalina/lino/sticker +200
     // =============================================
 
     const frontendPaperType = body.paperType as PaperType;
-    const isColor = body.isColor !== false; // Default true para color
+    // Fotos siempre son color — ignorar valor del cliente para evitar manipulación de precio
+    const isPhoto = body.productType === "photo" || body.productType === "single_photo" || body.productType === "collage";
+    const isColor = isPhoto ? true : body.isColor !== false;
 
     // Misma lógica para fotos y documentos
     const printCost = isColor ? PRINT_COSTS.color : PRINT_COSTS.blackWhite;
@@ -448,8 +460,8 @@ export async function GET(request: NextRequest) {
 
       // Obtener tipo de papel desde paper_options
       const paperOptions = order.paper_options as { type?: string } | null;
-      const dbPaperType = (paperOptions?.type || "bond_normal") as PaperType;
-      const paperSurcharge = PAPER_SURCHARGES[dbPaperType] || 0;
+      const dbPaperType = paperOptions?.type || "normal";
+      const paperSurcharge = getDbPaperSurcharge(dbPaperType);
 
       // Extraer doubleSided desde design_data (para documentos)
       const designData = order.design_data as { doubleSided?: boolean } | null;

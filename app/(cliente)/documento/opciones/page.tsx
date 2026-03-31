@@ -157,7 +157,7 @@ export default function DocumentoOpcionesPage() {
             onClick={async () => {
               // Clear document state to prevent stale data
               if (documentId) {
-                await deleteDocument(documentId);
+                try { await deleteDocument(documentId); } catch { /* continue cleanup */ }
               }
               localStorage.removeItem("currentDocumentId");
               localStorage.removeItem("uploadedDocument");

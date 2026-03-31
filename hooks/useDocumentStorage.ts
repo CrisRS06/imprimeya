@@ -152,6 +152,7 @@ export function useDocumentStorage() {
       await db.documents.delete(docId);
     } catch (err) {
       console.error("Error al eliminar documento:", err);
+      throw err;
     }
   }, []);
 
@@ -172,13 +173,12 @@ export function useDocumentStorage() {
 
       if (expiredIds.length > 0) {
         await db.documents.bulkDelete(expiredIds);
-        console.log(`Limpiados ${expiredIds.length} documentos expirados`);
       }
 
       return expiredIds.length;
     } catch (err) {
       console.error("Error al limpiar documentos expirados:", err);
-      return 0;
+      return -1;
     }
   }, []);
 

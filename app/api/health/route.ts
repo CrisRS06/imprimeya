@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { log } from "@/lib/logger";
 
 interface HealthStatus {
   status: "healthy" | "degraded" | "unhealthy";
@@ -47,14 +48,14 @@ export async function GET() {
     checks.database = {
       status: error ? "fail" : "pass",
       latency_ms: Date.now() - dbStart,
-      error: error?.message,
     };
+    if (error) log.error("Health: database check failed", undefined, { error: error.message });
   } catch (err) {
     checks.database = {
       status: "fail",
       latency_ms: 0,
-      error: err instanceof Error ? err.message : "Unknown error",
     };
+    log.error("Health: database check error", err);
   }
 
   // Check storage connectivity
@@ -69,14 +70,14 @@ export async function GET() {
     checks.storage = {
       status: error ? "fail" : "pass",
       latency_ms: Date.now() - storageStart,
-      error: error?.message,
     };
+    if (error) log.error("Health: storage check failed", undefined, { error: error.message });
   } catch (err) {
     checks.storage = {
       status: "fail",
       latency_ms: 0,
-      error: err instanceof Error ? err.message : "Unknown error",
     };
+    log.error("Health: storage check error", err);
   }
 
   // Determine overall status

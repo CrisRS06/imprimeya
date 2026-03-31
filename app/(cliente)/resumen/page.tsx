@@ -96,7 +96,10 @@ function ResumenPageContent() {
       if (documentPath) {
         // Crear pseudo-photo con el storagePath del documento
         const docInfo = localStorage.getItem("uploadedDocument");
-        const docName = docInfo ? JSON.parse(docInfo).name : "documento.pdf";
+        let docName = "documento.pdf";
+        if (docInfo) {
+          try { docName = JSON.parse(docInfo).name || docName; } catch { /* corrupted */ }
+        }
         setPhotos([{
           id: "document-pdf",
           name: docName,

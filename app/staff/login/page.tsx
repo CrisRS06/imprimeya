@@ -53,8 +53,7 @@ function StaffLoginForm() {
       // Verify staff role
       const isStaff =
         data.user.user_metadata?.role === "staff" ||
-        data.user.user_metadata?.is_staff === true ||
-        data.user.email?.endsWith("@simple.cr");
+        data.user.user_metadata?.is_staff === true;
 
       if (!isStaff) {
         await supabase.auth.signOut();
@@ -66,8 +65,9 @@ function StaffLoginForm() {
       // Redirect to dashboard or original destination
       router.push(redirectTo);
       router.refresh();
-    } catch {
-      setError("Error de conexion");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Error desconocido";
+      setError(`Error al iniciar sesión: ${message}`);
       setLoading(false);
     }
   };

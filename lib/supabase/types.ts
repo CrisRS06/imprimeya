@@ -8,16 +8,10 @@ export type { Database, Tables, TablesInsert, TablesUpdate, Enums } from './data
 // Incluye todos los valores del enum product_type en la BD
 export type ProductType = 'photo' | 'document' | 'single_photo' | 'collage' | 'poster'
 
-// Mantener compatibilidad con codigo existente (deprecated)
-export type LegacyProductType = 'single_photo' | 'collage' | 'poster'
-
 // ============================================
 // TIPOS DE PAPEL (V2 - Reales de la tienda)
 // ============================================
 export type PaperType = 'bond_normal' | 'opalina' | 'cartulina_lino' | 'sticker_semigloss' | 'fotografico'
-
-// Mantener compatibilidad con codigo existente
-export type LegacyPaperType = 'normal' | 'glossy' | 'matte' | 'sticker' | 'opalina' | 'lino'
 
 // ============================================
 // ESTADO DE ORDEN (Completo - sincronizado con BD)
@@ -114,20 +108,3 @@ export interface CollageSlot {
   rotation?: number
 }
 
-// ============================================
-// TIPOS PARA ORDEN EXTENDIDA
-// ============================================
-export interface OrderExtended extends Partial<Order> {
-  // Campos nuevos para fotos
-  photo_layout_id?: string
-  photos_in_order?: number
-  sheets_count?: number
-
-  // Campos nuevos para documentos
-  document_pages?: number
-  is_color?: boolean
-  source_file_type?: 'image' | 'pdf' | 'docx'
-
-  // Papel v2
-  paper_type_v2?: PaperType
-}

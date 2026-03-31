@@ -122,7 +122,13 @@ export function usePhotoStorage() {
       return null;
     }
     const stored = localStorage.getItem(KEYS.photos);
-    return stored ? JSON.parse(stored) : null;
+    if (!stored) return null;
+    try {
+      return JSON.parse(stored);
+    } catch {
+      localStorage.removeItem(KEYS.photos);
+      return null;
+    }
   }, [isExpired, clearAll]);
 
   // Session ID

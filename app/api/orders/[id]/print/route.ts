@@ -1,15 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { PRINT_COSTS, PAPER_SURCHARGES } from "@/lib/utils/price-calculator";
-import type { PaperType } from "@/lib/supabase/types";
+import { PRINT_COSTS, getDbPaperSurcharge } from "@/lib/utils/price-calculator";
+import { getStaffUser } from "@/lib/auth/staff-check";
+import { log, generateRequestId } from "@/lib/logger";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-// GET /api/orders/[id]/print - Obtener datos para impresion
+// GET /api/orders/[id]/print - Obtener datos para impresion (solo staff)
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  const requestId = generateRequestId();
   try {
+    const staffUser = await getStaffUser();
+    if (!staffUser) {
+      return NextResponse.json(
+        { error: "No autorizado" },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
     const supabase = await createServiceClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,7 +53,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
         // Validar que el path no este vacio
         if (!imagePath) {
-          console.warn(`[Print API] Empty image path at index ${index} for order ${order.id}`);
+          log.warn(`Empty image path at index ${index}`, { orderId: order.id, requestId });
           imageUrls.push(""); // Mantener indice para evitar desalineacion
           continue;
         }
@@ -55,7 +65,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         if (urlData?.publicUrl) {
           imageUrls.push(urlData.publicUrl);
         } else {
-          console.error(`[Print API] Failed to get public URL for: ${imagePath}`);
+          log.error("Failed to get public URL", undefined, { imagePath, requestId });
           imageUrls.push(""); // Mantener indice para evitar desalineacion
         }
       }
@@ -72,8 +82,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Calcular desglose de precio
     const isColor = order.is_color !== false; // default true
     const printCost = isColor ? PRINT_COSTS.color : PRINT_COSTS.blackWhite;
-    const dbPaperType = (designData.dbPaperType || order.paper_options?.type || "bond_normal") as PaperType;
-    const paperSurcharge = PAPER_SURCHARGES[dbPaperType] || 0;
+    const dbPaperType = designData.dbPaperType || order.paper_options?.type || "normal";
+    const paperSurcharge = getDbPaperSurcharge(dbPaperType);
     const pricePerUnit = printCost + paperSurcharge;
 
     return NextResponse.json({
@@ -104,7 +114,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     });
   } catch (error) {
-    console.error("Error in GET /api/orders/[id]/print:", error);
+    log.error("Error in GET /api/orders/[id]/print", error, { requestId });
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }

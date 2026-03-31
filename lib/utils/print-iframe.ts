@@ -123,7 +123,7 @@ function generatePrintHTML(pages: PrintPageData[], orderCode: string): string {
               src="${photo.imageUrl}"
               crossorigin="anonymous"
               style="left:${photo.x}px;top:${photo.y}px;width:${photo.width}px;height:${photo.height}px;"
-              onerror="this.style.display='none'"
+              onerror="this.style.background='#fee2e2';this.style.border='2px solid #ef4444';this.alt='Error: imagen no cargada'"
             />
           `
             )
@@ -145,7 +145,7 @@ export function printWithIframe(
   pages: PrintPageData[],
   orderCode: string
 ): Promise<void> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const iframe = document.createElement("iframe");
     iframe.style.position = "fixed";
     iframe.style.right = "0";
@@ -159,7 +159,7 @@ export function printWithIframe(
     const doc = iframe.contentDocument;
     if (!doc) {
       iframe.remove();
-      resolve();
+      reject(new Error("No se pudo crear el documento de impresión"));
       return;
     }
 
@@ -170,6 +170,7 @@ export function printWithIframe(
 
     const images = doc.querySelectorAll("img");
     let loadedCount = 0;
+    let failedCount = 0;
     const totalImages = images.length;
 
     const triggerPrint = () => {
@@ -182,6 +183,9 @@ export function printWithIframe(
         }
         setTimeout(() => {
           iframe.remove();
+          if (failedCount > 0) {
+            console.warn(`[print] ${failedCount} de ${totalImages} imágenes no cargaron`);
+          }
           resolve();
         }, 2000);
       }, 100);
@@ -199,12 +203,20 @@ export function printWithIframe(
       }
     };
 
+    const onError = () => {
+      failedCount++;
+      loadedCount++;
+      if (loadedCount >= totalImages) {
+        triggerPrint();
+      }
+    };
+
     images.forEach((img) => {
       if (img.complete && img.naturalHeight !== 0) {
         onLoad();
       } else {
         img.onload = onLoad;
-        img.onerror = onLoad;
+        img.onerror = onError;
       }
     });
 

@@ -1,23 +1,13 @@
 import { inngest } from "./client";
 import { generatePrintReadyPDF } from "@/lib/pdf/generator";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
 import { log } from "@/lib/logger";
 
-// Cliente sin tipos estrictos para operaciones async
-async function getSupabaseAdmin() {
-  const cookieStore = await cookies();
-  return createServerClient(
+// Cliente admin para background jobs (sin cookies — Inngest corre fuera del request context)
+function getSupabaseAdmin() {
+  return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll() {},
-      },
-    }
   );
 }
 

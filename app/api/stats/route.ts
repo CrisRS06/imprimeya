@@ -49,7 +49,7 @@ export async function GET() {
       );
     }
 
-    const supabase = await createServiceClient();
+    const supabase = createServiceClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = supabase as any;
 

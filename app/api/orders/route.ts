@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = parseResult.data;
-    const supabase = await createServiceClient();
+    const supabase = createServiceClient();
 
     // Validate that originalImages paths are valid and not empty strings
     const invalidPaths = body.originalImages.filter(
@@ -391,7 +391,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const supabase = await createServiceClient();
+    const supabase = createServiceClient();
     const { searchParams } = new URL(request.url);
 
     // Validación con Zod

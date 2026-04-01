@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import type { User } from "@supabase/supabase-js";
+import { createServiceClient } from "@/lib/supabase/server";
 
 /**
  * Check if the current request is from an authenticated staff member.
@@ -36,12 +36,10 @@ export async function getStaffUser(): Promise<User | null> {
     }
 
     // Verify staff role against staff_members table (service role bypasses RLS)
-    const serviceClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const serviceClient = createServiceClient();
 
-    const { data: staffMember } = await serviceClient
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: staffMember } = await (serviceClient as any)
       .from("staff_members")
       .select("id, role, is_active")
       .eq("user_id", user.id)

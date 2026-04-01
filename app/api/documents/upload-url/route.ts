@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createServiceClient();
+    const supabase = createServiceClient();
     const fileId = uuidv4();
     const session = sessionId || uuidv4();
     const path = `${session}/${fileId}.pdf`;

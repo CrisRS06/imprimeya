@@ -27,15 +27,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
   try {
     const { id } = await params;
-    const supabase = await createServiceClient();
+    const supabase = createServiceClient();
 
     // Determine if it's a code (6 chars) or UUID
     const isCode = id.length === 6;
     const column = isCode ? "code" : "id";
 
-    // For UUID access, verify authorization
+    // For UUID access, verify authorization (cache result to avoid double call)
+    const staffUser = !isCode ? await getStaffUser() : null;
     if (!isCode) {
-      const staffUser = await getStaffUser();
       const sessionId = getSessionId(request.headers);
 
       if (!staffUser && !sessionId) {
@@ -45,11 +45,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           { status: 401 }
         );
       }
-
-      // If not staff, we'll check session ID ownership after fetching the order
     }
 
-    const { data: order, error } = await (supabase as ReturnType<typeof createServiceClient> extends Promise<infer T> ? T : never)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: order, error } = await (supabase as any)
       .from("orders")
       .select(`
         *,
@@ -68,7 +67,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // For UUID access by non-staff, verify session ID ownership
     if (!isCode) {
-      const staffUser = await getStaffUser();
       if (!staffUser) {
         const sessionId = getSessionId(request.headers);
         if (order.client_session_id !== sessionId) {
@@ -148,7 +146,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const supabase = await createServiceClient();
+    const supabase = createServiceClient();
 
     // Campos permitidos para actualizar
     const allowedFields = [
@@ -234,7 +232,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params;
-    const supabase = await createServiceClient();
+    const supabase = createServiceClient();
 
     // Verificar que el pedido existe y obtener paths de archivos
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

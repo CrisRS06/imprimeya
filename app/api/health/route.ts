@@ -38,7 +38,7 @@ export async function GET() {
   // Check database connectivity
   try {
     const dbStart = Date.now();
-    const supabase = await createServiceClient();
+    const supabase = createServiceClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any)
       .from("orders")
@@ -61,7 +61,7 @@ export async function GET() {
   // Check storage connectivity
   try {
     const storageStart = Date.now();
-    const supabase = await createServiceClient();
+    const supabase = createServiceClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).storage
       .from("originals")

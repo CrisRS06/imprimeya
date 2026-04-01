@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createServiceClient();
+    const supabase = createServiceClient();
 
     // Generar nombre unico
     const fileId = uuidv4();
@@ -183,7 +183,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const supabase = await createServiceClient();
+    const supabase = createServiceClient();
 
     const { error } = await supabase.storage.from("originals").remove([path]);
 

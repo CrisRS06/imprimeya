@@ -13,7 +13,6 @@ export default function HomePage() {
             width={200}
             height={80}
             priority
-            loading="eager"
             className="h-16 w-auto"
           />
           <div className="mt-4 bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-1.5 rounded-full">

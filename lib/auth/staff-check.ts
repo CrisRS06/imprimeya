@@ -1,10 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import type { User } from "@supabase/supabase-js";
 
 /**
- * Check if the current request is from an authenticated staff member
- * For use in API routes
+ * Check if the current request is from an authenticated staff member.
+ * Uses staff_members table as the authoritative source (not user_metadata).
+ * For use in API routes.
  */
 export async function getStaffUser(): Promise<User | null> {
   try {
@@ -33,12 +35,20 @@ export async function getStaffUser(): Promise<User | null> {
       return null;
     }
 
-    // Verify staff role
-    const isStaff =
-      user.user_metadata?.role === "staff" ||
-      user.user_metadata?.is_staff === true;
+    // Verify staff role against staff_members table (service role bypasses RLS)
+    const serviceClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
-    return isStaff ? user : null;
+    const { data: staffMember } = await serviceClient
+      .from("staff_members")
+      .select("id, role, is_active")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .single();
+
+    return staffMember ? user : null;
   } catch (error) {
     console.error("[staff-check] Error verificando usuario staff:", error);
     return null;

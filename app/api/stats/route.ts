@@ -28,6 +28,12 @@ interface StatsResponse {
   };
 }
 
+// Helper: sum totals from a Supabase result
+function sumTotals(result: { data: { total: number }[] | null }): number {
+  if (!result.data) return 0;
+  return result.data.reduce((sum, order) => sum + (order.total || 0), 0);
+}
+
 // GET /api/stats - Obtener métricas del dashboard (solo staff)
 export async function GET() {
   const requestId = generateRequestId();
@@ -51,14 +57,12 @@ export async function GET() {
     const TIMEZONE = "America/Costa_Rica";
     const now = new Date();
 
-    // Obtener fecha actual en Costa Rica
     const costaRicaDate = new Date(now.toLocaleString("en-US", { timeZone: TIMEZONE }));
     const todayStart = new Date(
       costaRicaDate.getFullYear(),
       costaRicaDate.getMonth(),
       costaRicaDate.getDate()
     );
-    // Convertir de vuelta a UTC para queries
     const tzOffset = now.getTime() - costaRicaDate.getTime();
     todayStart.setTime(todayStart.getTime() + tzOffset);
 
@@ -67,142 +71,59 @@ export async function GET() {
     const monthStart = new Date(todayStart);
     monthStart.setDate(monthStart.getDate() - 30);
 
-    // Ejecutar todas las consultas en paralelo
+    const todayISO = todayStart.toISOString();
+    const weekISO = weekStart.toISOString();
+    const monthISO = monthStart.toISOString();
+
+    // Batch 1: All count queries (cheap — head:true, no data transfer)
     const [
-      todayCreatedResult,
-      todayDeliveredResult,
-      todayPendingResult,
-      todayRevenueResult,
-      weekCreatedResult,
-      weekDeliveredResult,
-      weekRevenueResult,
-      monthCreatedResult,
-      monthDeliveredResult,
-      monthRevenueResult,
-      allTimeTotalResult,
-      allTimeDeliveredResult,
-      allTimeCancelledResult,
-      allTimeRevenueResult,
+      todayCreated, todayDelivered, todayPending,
+      weekCreated, weekDelivered,
+      monthCreated, monthDelivered,
+      allTotal, allDelivered, allCancelled,
     ] = await Promise.all([
-      // HOY - Creados
-      sb
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .gte("created_at", todayStart.toISOString()),
-
-      // HOY - Entregados
-      sb
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "delivered")
-        .gte("delivered_at", todayStart.toISOString()),
-
-      // HOY - Pendientes (creados hoy y aún pendientes)
-      sb
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "pending")
-        .gte("created_at", todayStart.toISOString()),
-
-      // HOY - Ingresos
-      sb
-        .from("orders")
-        .select("total")
-        .eq("status", "delivered")
-        .gte("delivered_at", todayStart.toISOString()),
-
-      // SEMANA - Creados
-      sb
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .gte("created_at", weekStart.toISOString()),
-
-      // SEMANA - Entregados
-      sb
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "delivered")
-        .gte("delivered_at", weekStart.toISOString()),
-
-      // SEMANA - Ingresos
-      sb
-        .from("orders")
-        .select("total")
-        .eq("status", "delivered")
-        .gte("delivered_at", weekStart.toISOString()),
-
-      // MES - Creados
-      sb
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .gte("created_at", monthStart.toISOString()),
-
-      // MES - Entregados
-      sb
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "delivered")
-        .gte("delivered_at", monthStart.toISOString()),
-
-      // MES - Ingresos
-      sb
-        .from("orders")
-        .select("total")
-        .eq("status", "delivered")
-        .gte("delivered_at", monthStart.toISOString()),
-
-      // TODO EL TIEMPO - Total
-      sb
-        .from("orders")
-        .select("id", { count: "exact", head: true }),
-
-      // TODO EL TIEMPO - Entregados
-      sb
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "delivered"),
-
-      // TODO EL TIEMPO - Cancelados
-      sb
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "cancelled"),
-
-      // TODO EL TIEMPO - Ingresos totales
-      sb
-        .from("orders")
-        .select("total")
-        .eq("status", "delivered"),
+      sb.from("orders").select("id", { count: "exact", head: true }).gte("created_at", todayISO),
+      sb.from("orders").select("id", { count: "exact", head: true }).eq("status", "delivered").gte("delivered_at", todayISO),
+      sb.from("orders").select("id", { count: "exact", head: true }).eq("status", "pending").gte("created_at", todayISO),
+      sb.from("orders").select("id", { count: "exact", head: true }).gte("created_at", weekISO),
+      sb.from("orders").select("id", { count: "exact", head: true }).eq("status", "delivered").gte("delivered_at", weekISO),
+      sb.from("orders").select("id", { count: "exact", head: true }).gte("created_at", monthISO),
+      sb.from("orders").select("id", { count: "exact", head: true }).eq("status", "delivered").gte("delivered_at", monthISO),
+      sb.from("orders").select("id", { count: "exact", head: true }),
+      sb.from("orders").select("id", { count: "exact", head: true }).eq("status", "delivered"),
+      sb.from("orders").select("id", { count: "exact", head: true }).eq("status", "cancelled"),
     ]);
 
-    // Función helper para sumar totales
-    const sumTotals = (result: { data: { total: number }[] | null }): number => {
-      if (!result.data) return 0;
-      return result.data.reduce((sum, order) => sum + (order.total || 0), 0);
-    };
+    // Batch 2: Revenue queries (need data for sum — only fetch 'total' column)
+    const [todayRevenue, weekRevenue, monthRevenue, allRevenue] = await Promise.all([
+      sb.from("orders").select("total").eq("status", "delivered").gte("delivered_at", todayISO),
+      sb.from("orders").select("total").eq("status", "delivered").gte("delivered_at", weekISO),
+      sb.from("orders").select("total").eq("status", "delivered").gte("delivered_at", monthISO),
+      sb.from("orders").select("total").eq("status", "delivered"),
+    ]);
 
     const stats: StatsResponse = {
       today: {
-        created: todayCreatedResult.count || 0,
-        delivered: todayDeliveredResult.count || 0,
-        pending: todayPendingResult.count || 0,
-        revenue: sumTotals(todayRevenueResult),
+        created: todayCreated.count || 0,
+        delivered: todayDelivered.count || 0,
+        pending: todayPending.count || 0,
+        revenue: sumTotals(todayRevenue),
       },
       week: {
-        created: weekCreatedResult.count || 0,
-        delivered: weekDeliveredResult.count || 0,
-        revenue: sumTotals(weekRevenueResult),
+        created: weekCreated.count || 0,
+        delivered: weekDelivered.count || 0,
+        revenue: sumTotals(weekRevenue),
       },
       month: {
-        created: monthCreatedResult.count || 0,
-        delivered: monthDeliveredResult.count || 0,
-        revenue: sumTotals(monthRevenueResult),
+        created: monthCreated.count || 0,
+        delivered: monthDelivered.count || 0,
+        revenue: sumTotals(monthRevenue),
       },
       allTime: {
-        total: allTimeTotalResult.count || 0,
-        delivered: allTimeDeliveredResult.count || 0,
-        cancelled: allTimeCancelledResult.count || 0,
-        revenue: sumTotals(allTimeRevenueResult),
+        total: allTotal.count || 0,
+        delivered: allDelivered.count || 0,
+        cancelled: allCancelled.count || 0,
+        revenue: sumTotals(allRevenue),
       },
     };
 

@@ -1,12 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   ImageIcon,
   FileTextIcon,
-  LayoutGridIcon,
   ArrowRightIcon,
   SearchIcon,
 } from "lucide-react";
@@ -36,14 +34,6 @@ const productOptions: ProductOption[] = [
     icon: FileTextIcon,
     href: "/documento",
   },
-  // Poster oculto por ahora
-  // {
-  //   id: "poster",
-  //   title: "Poster",
-  //   description: "Una foto en varias hojas",
-  //   icon: LayoutGridIcon,
-  //   href: "/nuevo?type=poster",
-  // },
 ];
 
 export default function HomePage() {
@@ -57,12 +47,7 @@ export default function HomePage() {
     <div className="min-h-full flex flex-col bg-white">
       {/* Header con Logo Simple */}
       <header className="px-6 pt-8 pb-6">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col items-center"
-        >
+        <div className="flex flex-col items-center animate-fade-in">
           <Image
             src="/logo-simple.png"
             alt="Simple! - Vive mejor, al mejor precio"
@@ -76,39 +61,32 @@ export default function HomePage() {
               ImprimeYA
             </span>
           </div>
-        </motion.div>
+        </div>
       </header>
 
       {/* Main content */}
       <main className="flex-1 px-6 pb-8">
         <div className="max-w-md mx-auto">
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="text-center text-gray-500 mb-8"
-          >
+          <p className="text-center text-gray-500 mb-8 animate-fade-in animation-delay-200">
             ¿Qué quieres imprimir hoy?
-          </motion.p>
+          </p>
 
           {/* Product Grid */}
           <div className="space-y-4">
             {productOptions.map((option, index) => {
               const IconComponent = option.icon;
               return (
-                <motion.button
+                <button
                   key={option.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 + index * 0.1, duration: 0.4 }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
                   onClick={() => handleSelect(option)}
                   className={cn(
                     "group w-full flex items-center gap-5 p-5 rounded-2xl",
                     "bg-white border border-gray-100",
                     "hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10",
-                    "transition-all duration-300"
+                    "active:scale-[0.98] transition-all duration-300",
+                    "animate-fade-in-up",
+                    index === 0 && "animation-delay-100",
+                    index === 1 && "animation-delay-200",
                   )}
                 >
                   {/* Icon */}
@@ -146,30 +124,20 @@ export default function HomePage() {
                       "transition-all duration-300"
                     )}
                   />
-                </motion.button>
+                </button>
               );
             })}
           </div>
 
           {/* Info note */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-8 text-center"
-          >
+          <div className="mt-8 text-center animate-fade-in animation-delay-500">
             <p className="text-xs text-gray-400">
-              Todas las impresiones son en papel carta (8.5" x 11")
+              Todas las impresiones son en papel carta (8.5&quot; x 11&quot;)
             </p>
-          </motion.div>
+          </div>
 
           {/* Check order status */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="mt-8"
-          >
+          <div className="mt-8 animate-fade-in-up animation-delay-600">
             <button
               onClick={() => router.push("/estado")}
               className={cn(
@@ -184,7 +152,7 @@ export default function HomePage() {
                 Consultar estado de pedido
               </span>
             </button>
-          </motion.div>
+          </div>
         </div>
       </main>
 

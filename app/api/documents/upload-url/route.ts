@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { v4 as uuidv4 } from "uuid";
+import { checkRateLimit, getClientId, RATE_LIMITS } from "@/lib/utils/rate-limiter";
 import { log, generateRequestId } from "@/lib/logger";
 
 /**
@@ -13,8 +14,34 @@ export async function POST(request: NextRequest) {
   const requestId = generateRequestId();
 
   try {
+    // Rate limiting — prevent abuse of signed URL generation
+    const clientId = getClientId(request.headers);
+    const rateCheck = checkRateLimit(`upload-url:${clientId}`, { limit: 5, windowMs: 60_000 });
+
+    if (!rateCheck.success) {
+      log.warn("Rate limit exceeded for upload-url", { clientId, requestId });
+      return NextResponse.json(
+        { error: "Demasiadas solicitudes. Espera un momento." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil((rateCheck.resetTime - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
     const body = await request.json();
     const { sessionId } = body;
+
+    // Validate sessionId format if provided
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (sessionId && !uuidRegex.test(sessionId)) {
+      return NextResponse.json(
+        { error: "sessionId inválido" },
+        { status: 400 }
+      );
+    }
 
     const supabase = await createServiceClient();
     const fileId = uuidv4();

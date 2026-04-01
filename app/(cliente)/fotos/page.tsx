@@ -560,7 +560,7 @@ export default function FotosPage() {
                 {files.length} de {MAX_FILES} {files.length === 1 ? "imagen" : "imágenes"}
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                {files.length < MAX_FILES ? "Toca para agregar mas" : "Limite alcanzado"}
+                {files.length < MAX_FILES ? "Toca para agregar más" : "Limite alcanzado"}
               </p>
             </div>
           )}
@@ -570,7 +570,7 @@ export default function FotosPage() {
       {/* How it works */}
       <section className="px-6 pb-4">
         <div className="bg-gray-50 rounded-2xl p-5">
-          <h3 className="font-medium text-black mb-3">Como funciona</h3>
+          <h3 className="font-medium text-black mb-3">Cómo funciona</h3>
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">1</div>
@@ -578,7 +578,7 @@ export default function FotosPage() {
             </div>
             <div className="flex items-center gap-3">
               <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-500">2</div>
-              <p className="text-sm text-gray-400">Elige el tamano y cantidad</p>
+              <p className="text-sm text-gray-400">Elige el tamaño y cantidad</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-500">3</div>

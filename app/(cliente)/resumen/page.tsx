@@ -183,7 +183,7 @@ function ResumenPageContent() {
       await navigator.clipboard.writeText(orderCode);
       setCopied(true);
       hapticFeedback("success");
-      toast.success("Codigo copiado");
+      toast.success("Código copiado");
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("No se pudo copiar");
@@ -363,7 +363,7 @@ function ResumenPageContent() {
                 Pedido recibido
               </h1>
               <p className="text-gray-600 mt-2">
-                Tu pedido esta siendo procesado
+                Tu pedido está siendo procesado
               </p>
             </motion.div>
 
@@ -374,7 +374,7 @@ function ResumenPageContent() {
               transition={{ delay: 0.4 }}
               className="bg-gray-900 rounded-3xl p-8 text-white"
             >
-              <p className="text-sm text-gray-400 mb-3">Tu codigo de pedido</p>
+              <p className="text-sm text-gray-400 mb-3">Tu código de pedido</p>
               <p className="text-5xl font-mono font-bold tracking-widest">
                 {formatOrderCode(orderCode)}
               </p>
@@ -384,7 +384,7 @@ function ResumenPageContent() {
                 className="mt-5 flex items-center gap-2 mx-auto px-4 py-2 rounded-full bg-gray-800 text-sm text-gray-300 hover:text-white transition-colors"
               >
                 <CopyIcon className="w-4 h-4" />
-                {copied ? "Copiado!" : "Copiar codigo"}
+                {copied ? "Copiado!" : "Copiar código"}
               </motion.button>
             </motion.div>
 
@@ -396,11 +396,11 @@ function ResumenPageContent() {
               className="bg-white rounded-2xl border p-5 text-left"
             >
               <h3 className="font-semibold text-gray-900 mb-4">
-                Proximos pasos
+                Próximos pasos
               </h3>
               <div className="space-y-4">
                 {[
-                  { icon: UserIcon, text: "Lleva este codigo a la cajera" },
+                  { icon: UserIcon, text: "Lleva este código a la cajera" },
                   { icon: ClipboardCheckIcon, text: "Confirma tu pedido" },
                   { icon: CreditCardIcon, text: "Paga en el mostrador" },
                   { icon: PackageIcon, text: "Recibe tu pedido" },
@@ -650,7 +650,7 @@ function ResumenPageContent() {
               className="bg-gray-100 rounded-2xl p-5 text-center"
             >
               <p className="text-sm text-gray-600">
-                Al confirmar recibiras un codigo unico para recoger tu pedido
+                Al confirmar recibirás un código único para recoger tu pedido
               </p>
             </motion.div>
 
@@ -661,7 +661,7 @@ function ResumenPageContent() {
               transition={{ delay: 0.2 }}
               className="text-sm text-gray-500 text-center px-4"
             >
-              Pagaras al recoger tu impresion en el mostrador
+              Pagarás al recoger tu impresión en el mostrador
             </motion.p>
           </div>
         </main>

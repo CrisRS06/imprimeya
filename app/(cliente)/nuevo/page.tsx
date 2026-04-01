@@ -42,7 +42,7 @@ const productTypes: {
   {
     id: "photo",
     label: "Una foto",
-    description: "Imprime una foto en el tamano que elijas",
+    description: "Imprime una foto en el tamaño que elijas",
     icon: ImageIcon,
     maxFiles: 1,
   },

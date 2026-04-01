@@ -95,7 +95,7 @@ export default function DocumentoPage() {
           size: file.size,
           pageCount: null,
           status: "error",
-          error: "Archivo PDF invalido o corrupto",
+          error: "Archivo PDF inválido o corrupto",
         };
       }
 
@@ -310,7 +310,7 @@ export default function DocumentoPage() {
                 {document.pageCount && (
                   <p className="text-sm text-gray-600 mt-2">
                     <span className="font-medium">{document.pageCount}</span>{" "}
-                    {document.pageCount === 1 ? "pagina" : "paginas"}
+                    {document.pageCount === 1 ? "página" : "páginas"}
                   </p>
                 )}
               </div>
@@ -341,7 +341,7 @@ export default function DocumentoPage() {
           <h3 className="font-medium text-emerald-900 mb-2">Formato aceptado</h3>
           <p className="text-sm text-emerald-700">PDF (.pdf)</p>
           <p className="text-xs text-emerald-600 mt-3">
-            Se imprime a pagina completa en papel carta
+            Se imprime a página completa en papel carta
           </p>
           <p className="text-xs text-gray-500 mt-3">
             Tienes un Word?{" "}

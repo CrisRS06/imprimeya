@@ -87,7 +87,7 @@ export default function FotosPapelPage() {
             Selecciona un layout primero
           </h2>
           <p className="text-gray-500 mb-6">
-            Debes elegir el tamano y layout de las fotos
+            Debes elegir el tamaño y layout de las fotos
           </p>
           <Button onClick={() => router.push("/fotos/layout")}>
             Elegir layout

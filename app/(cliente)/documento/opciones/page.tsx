@@ -178,10 +178,10 @@ export default function DocumentoOpcionesPage() {
               animate={{ opacity: 1, y: 0 }}
               className="text-2xl font-bold text-gray-900"
             >
-              Opciones de impresion
+              Opciones de impresión
             </motion.h1>
             <p className="text-sm text-gray-500">
-              Paso 2 de 2: Configura tu impresion
+              Paso 2 de 2: Configura tu impresión
             </p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center">
@@ -213,7 +213,7 @@ export default function DocumentoOpcionesPage() {
                 </h3>
                 <p className="text-sm text-gray-500">
                   {document.pageCount}{" "}
-                  {document.pageCount === 1 ? "pagina" : "paginas"}
+                  {document.pageCount === 1 ? "página" : "páginas"}
                 </p>
               </div>
             </div>
@@ -371,7 +371,7 @@ export default function DocumentoOpcionesPage() {
         {/* Double sided option */}
         <section className="px-4 pb-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Caras de impresion
+            Caras de impresión
           </h3>
           <div className="grid grid-cols-2 gap-3">
             {/* Una cara */}

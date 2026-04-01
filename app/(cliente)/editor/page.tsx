@@ -141,7 +141,7 @@ function EditorPageContent() {
               {/* Selector de tamano */}
               <div className="flex items-center gap-3">
                 <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                  Tamano:
+                  Tamaño:
                 </label>
                 <Select value={selectedSize} onValueChange={handleSizeChange}>
                   <SelectTrigger className="flex-1">

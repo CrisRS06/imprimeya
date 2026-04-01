@@ -56,7 +56,7 @@ function CheckboxRow(props: RowComponentProps<RowCustomProps>) {
         "ml-3 text-base",
         isSelected ? "text-emerald-700 font-medium" : "text-gray-700"
       )}>
-        Pagina {pageNum}
+        Página {pageNum}
       </span>
       {isSelected && (
         <CheckCircle2Icon className="ml-auto w-5 h-5 text-emerald-500" />
@@ -259,10 +259,10 @@ export default function SeleccionarPaginasPage() {
           </button>
           <div className="flex-1">
             <h1 className="text-xl font-bold text-gray-900">
-              Seleccionar paginas
+              Seleccionar páginas
             </h1>
             <p className="text-sm text-gray-500">
-              Total: {numPages} {numPages === 1 ? "pagina" : "paginas"}
+              Total: {numPages} {numPages === 1 ? "página" : "páginas"}
             </p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center">
@@ -350,7 +350,7 @@ export default function SeleccionarPaginasPage() {
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm text-gray-600">
             {selectedPages.size} de {numPages}{" "}
-            {numPages === 1 ? "pagina" : "paginas"}
+            {numPages === 1 ? "página" : "páginas"}
           </span>
           {selectedPages.size > 0 && (
             <span className="text-sm font-medium text-emerald-600">
@@ -377,7 +377,7 @@ export default function SeleccionarPaginasPage() {
           ) : (
             <>
               Continuar ({selectedPages.size}{" "}
-              {selectedPages.size === 1 ? "pagina" : "paginas"})
+              {selectedPages.size === 1 ? "página" : "páginas"})
               <ChevronRightIcon className="w-5 h-5 ml-2" />
             </>
           )}

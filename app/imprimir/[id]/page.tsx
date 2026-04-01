@@ -363,7 +363,7 @@ export default function PrintPage({
               <span className="ml-2 font-medium">{data.order.productType}</span>
             </div>
             <div>
-              <span className="text-gray-500">Tamano:</span>
+              <span className="text-gray-500">Tamaño:</span>
               <span className="ml-2 font-medium">{data.order.sizeName}</span>
             </div>
             <div>
@@ -382,7 +382,7 @@ export default function PrintPage({
               </p>
               <div className="text-sm space-y-2 font-mono">
                 <div className="flex justify-between text-emerald-700">
-                  <span>Impresion {data.order.isColor ? "color" : "B/N"}</span>
+                  <span>Impresión {data.order.isColor ? "color" : "B/N"}</span>
                   <span>
                     {formatPrice(data.order.printCost)} × {sheetsNeeded} = {formatPrice(data.order.printCost * sheetsNeeded)}
                   </span>

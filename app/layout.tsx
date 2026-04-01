@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     default: "ImprimeYA - Simple!",
     template: "%s | ImprimeYA",
   },
-  description: "Sistema de auto-servicio de impresion fotografica. Subi tus fotos, diseña y recoge en minutos.",
+  description: "Sistema de auto-servicio de impresión fotográfica. Subí tus fotos, diseñá y recogé en minutos.",
   manifest: "/manifest.json",
   applicationName: "ImprimeYA",
   keywords: ["impresion", "fotos", "collage", "poster", "simple", "costa rica"],
@@ -50,8 +50,8 @@ export const viewport: Viewport = {
   themeColor: "#FFB902",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
   viewportFit: "cover",
 };
 

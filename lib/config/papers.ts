@@ -17,8 +17,8 @@ export interface PaperConfig {
 export const PAPERS: Record<PaperType, PaperConfig> = {
   bond_normal: {
     code: 'bond_normal',
-    displayName: 'Bond Normal',
-    description: 'Papel estandar para documentos e impresiones',
+    displayName: 'Papel Normal',
+    description: 'Papel estándar para documentos e impresiones',
     compatibleProducts: ['document', 'photo'],
     iconName: 'file-text',
   },
@@ -38,15 +38,15 @@ export const PAPERS: Record<PaperType, PaperConfig> = {
   },
   sticker_semigloss: {
     code: 'sticker_semigloss',
-    displayName: 'Sticker Semi-gloss',
+    displayName: 'Papel Adhesivo (Sticker)',
     description: 'Papel adhesivo con acabado semi-brillante',
     compatibleProducts: ['photo'],
     iconName: 'sticky-note',
   },
   fotografico: {
     code: 'fotografico',
-    displayName: 'Fotografico',
-    description: 'Papel fotografico profesional brillante',
+    displayName: 'Fotográfico',
+    description: 'Papel fotográfico profesional brillante',
     compatibleProducts: ['photo'],
     iconName: 'image',
     recommended: true,
@@ -81,11 +81,11 @@ export function getRecommendedPaper(productType: ProductType): PaperConfig | und
  * Nombres de display para UI
  */
 export const PAPER_DISPLAY_NAMES: Record<PaperType, string> = {
-  bond_normal: 'Bond Normal',
+  bond_normal: 'Papel Normal',
   opalina: 'Opalina',
   cartulina_lino: 'Cartulina Lino',
-  sticker_semigloss: 'Sticker Semi-gloss',
-  fotografico: 'Fotografico',
+  sticker_semigloss: 'Papel Adhesivo (Sticker)',
+  fotografico: 'Fotográfico',
 }
 
 /**

@@ -11,7 +11,11 @@ import { LockIcon, AlertCircleIcon, MailIcon } from "lucide-react";
 function StaffLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/dashboard";
+  const rawRedirect = searchParams.get("redirect") || "/dashboard";
+  // Only allow relative paths — prevents open redirect attacks
+  const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//")
+    ? rawRedirect
+    : "/dashboard";
   const errorParam = searchParams.get("error");
 
   const [email, setEmail] = useState("");
@@ -45,7 +49,7 @@ function StaffLoginForm() {
       }
 
       if (!data.user) {
-        setError("Error al iniciar sesion");
+        setError("Error al iniciar sesión");
         setLoading(false);
         return;
       }
@@ -89,7 +93,7 @@ function StaffLoginForm() {
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-              Correo electronico
+              Correo electrónico
             </Label>
             <div className="relative">
               <MailIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -111,7 +115,7 @@ function StaffLoginForm() {
 
           <div className="space-y-2">
             <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-              Contrasena
+              Contraseña
             </Label>
             <div className="relative">
               <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -148,7 +152,7 @@ function StaffLoginForm() {
                 Verificando...
               </span>
             ) : (
-              "Iniciar sesion"
+              "Iniciar sesión"
             )}
           </Button>
         </form>

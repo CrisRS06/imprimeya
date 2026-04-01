@@ -334,7 +334,7 @@ export function LayoutSelector({
       {/* 3. Selector de cantidad */}
       <div>
         <h3 className="text-sm font-medium text-gray-700 mb-3">
-          {isMultiPhoto ? "Copias por foto" : "Cuantas copias quieres?"}
+          {isMultiPhoto ? "Copias por foto" : "¿Cuántas copias quieres?"}
         </h3>
 
         {isMultiPhoto ? (

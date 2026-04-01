@@ -122,9 +122,9 @@ function OpcionesPageContent() {
       {/* Main content */}
       <main className="flex-1 px-4 pb-4 overflow-auto">
         <div className="max-w-md mx-auto space-y-6">
-          {/* Tamano - Chips horizontales */}
+          {/* Tamaño - Chips horizontales */}
           <section>
-            <h2 className="text-sm font-medium text-gray-700 mb-3">Tamano</h2>
+            <h2 className="text-sm font-medium text-gray-700 mb-3">Tamaño</h2>
             <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
               {sizeOptions.map((option, index) => {
                 const isSelected = selectedSize === option.value;
@@ -170,7 +170,7 @@ function OpcionesPageContent() {
 
           {/* Tipo de impresión - Color/B&N */}
           <section>
-            <h2 className="text-sm font-medium text-gray-700 mb-3">Tipo de impresion</h2>
+            <h2 className="text-sm font-medium text-gray-700 mb-3">Tipo de impresión</h2>
             <div className="grid grid-cols-2 gap-3">
               {/* Color */}
               <motion.button

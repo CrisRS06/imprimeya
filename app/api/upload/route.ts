@@ -172,6 +172,17 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // Verify the session owns this file (path format: sessionId/fileId.ext)
+    const sessionId = request.headers.get("x-session-id");
+    const pathSessionId = path.split("/")[0];
+    if (sessionId && pathSessionId !== sessionId) {
+      log.warn("Session mismatch on file deletion", { sessionId, pathSessionId, path });
+      return NextResponse.json(
+        { error: "No autorizado para eliminar este archivo" },
+        { status: 403 }
+      );
+    }
+
     const supabase = await createServiceClient();
 
     const { error } = await supabase.storage.from("originals").remove([path]);

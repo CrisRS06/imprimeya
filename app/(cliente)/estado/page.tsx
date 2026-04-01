@@ -18,14 +18,14 @@ export default function ConsultarEstadoPage() {
     const cleanCode = codigo.replace(/[\s-]/g, "").toUpperCase();
 
     if (cleanCode.length !== 6) {
-      setError("El codigo debe tener 6 caracteres");
+      setError("El código debe tener 6 caracteres");
       return;
     }
 
     // Validar que solo tenga caracteres validos
     const validChars = /^[A-Z0-9]+$/;
     if (!validChars.test(cleanCode)) {
-      setError("El codigo solo puede contener letras y numeros");
+      setError("El código solo puede contener letras y números");
       return;
     }
 
@@ -66,7 +66,7 @@ export default function ConsultarEstadoPage() {
               </div>
               <h2 className="text-xl font-bold text-black">Buscar pedido</h2>
               <p className="text-sm text-gray-500 mt-1">
-                Ingresa el codigo de 6 digitos
+                Ingresa el código de 6 dígitos
               </p>
             </div>
 
@@ -98,7 +98,7 @@ export default function ConsultarEstadoPage() {
             </form>
 
             <p className="text-xs text-gray-400 text-center mt-6">
-              El codigo se encuentra en la confirmacion de tu pedido
+              El código se encuentra en la confirmación de tu pedido
             </p>
           </div>
         </div>

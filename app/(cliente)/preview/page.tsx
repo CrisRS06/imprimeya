@@ -166,7 +166,7 @@ function PreviewPageContent() {
         {/* Size Selector - Chips horizontales */}
         <div className="mb-4">
           <p className="text-sm font-medium text-gray-700 mb-2">
-            Tamano de impresion
+            Tamaño de impresión
           </p>
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
             {sizeOptions.map((option, index) => {

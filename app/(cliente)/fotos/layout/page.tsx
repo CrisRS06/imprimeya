@@ -134,7 +134,7 @@ export default function FotosLayoutPage() {
             <ArrowLeftIcon className="w-5 h-5" />
           </button>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-black">Tamano y cantidad</h1>
+            <h1 className="text-2xl font-bold text-black">Tamaño y cantidad</h1>
             <p className="text-sm text-gray-400">Paso 2 de 3</p>
           </div>
           <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -194,7 +194,7 @@ export default function FotosLayoutPage() {
               <ArrowRightIcon className="w-5 h-5 ml-2" />
             </>
           ) : (
-            "Selecciona un tamano"
+            "Selecciona un tamaño"
           )}
         </Button>
       </section>

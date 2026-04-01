@@ -50,21 +50,21 @@ const STATUS_CONFIG: Record<
 > = {
   pending: {
     label: "Pendiente",
-    description: "Tu pedido esta en cola, pronto estara listo",
+    description: "Tu pedido está en cola, pronto estará listo",
     icon: ClockIcon,
     color: "text-primary",
     bgColor: "bg-primary/20",
   },
   processing: {
     label: "En proceso",
-    description: "Tu pedido se esta imprimiendo",
+    description: "Tu pedido se está imprimiendo",
     icon: ClockIcon,
     color: "text-amber-600",
     bgColor: "bg-amber-100",
   },
   ready: {
     label: "Listo",
-    description: "Tu pedido esta listo para recoger",
+    description: "Tu pedido está listo para recoger",
     icon: PackageIcon,
     color: "text-blue-600",
     bgColor: "bg-blue-100",
@@ -189,7 +189,7 @@ export default function EstadoPedidoPage({
                 Pedido no encontrado
               </h1>
               <p className="text-gray-600 mt-2">
-                No encontramos un pedido con el codigo{" "}
+                No encontramos un pedido con el código{" "}
                 <strong>{formatOrderCode(codigo)}</strong>
               </p>
             </div>
@@ -247,7 +247,7 @@ export default function EstadoPedidoPage({
           {/* Codigo */}
           <Card className="bg-gray-900 text-white">
             <CardContent className="py-6 text-center">
-              <p className="text-sm text-gray-400 mb-1">Codigo de pedido</p>
+              <p className="text-sm text-gray-400 mb-1">Código de pedido</p>
               <p className="text-3xl font-mono font-bold tracking-wider">
                 {formatOrderCode(order.code)}
               </p>
@@ -315,7 +315,7 @@ export default function EstadoPedidoPage({
                 </div>
                 {order.print_sizes && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Tamano</span>
+                    <span className="text-gray-600">Tamaño</span>
                     <span className="font-medium">{order.print_sizes.name}</span>
                   </div>
                 )}
@@ -353,7 +353,7 @@ export default function EstadoPedidoPage({
                   Pedido en proceso
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
-                  Te avisaremos cuando este listo. Presenta tu codigo en el mostrador.
+                  Te avisaremos cuando esté listo. Presenta tu código en el mostrador.
                 </p>
               </CardContent>
             </Card>

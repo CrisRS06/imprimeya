@@ -32,7 +32,7 @@ const productOptions: ProductOption[] = [
   {
     id: "document",
     title: "Documentos",
-    description: "PDF a pagina completa",
+    description: "PDF a página completa",
     icon: FileTextIcon,
     href: "/documento",
   },
@@ -88,7 +88,7 @@ export default function HomePage() {
             transition={{ delay: 0.2 }}
             className="text-center text-gray-500 mb-8"
           >
-            Que quieres imprimir hoy?
+            ¿Qué quieres imprimir hoy?
           </motion.p>
 
           {/* Product Grid */}

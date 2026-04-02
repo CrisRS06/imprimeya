@@ -19,8 +19,10 @@ type Events = {
   };
 };
 
-// Cliente Inngest
+// Cliente Inngest (eventKey auto-reads from INNGEST_EVENT_KEY env var,
+// explicit here as defense-in-depth)
 export const inngest = new Inngest({
   id: "imprimeya",
+  eventKey: process.env.INNGEST_EVENT_KEY,
   schemas: new EventSchemas().fromRecord<Events>(),
 });

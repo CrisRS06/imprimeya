@@ -34,6 +34,15 @@ export const generateOrderPDF = inngest.createFunction(
       log.error("Inngest function failed: generate-order-pdf", error, {
         orderId: eventData?.orderId,
       });
+      // Revert order to pending so staff can process manually
+      if (eventData?.orderId) {
+        const supabase = getSupabaseAdmin();
+        await supabase
+          .from("orders")
+          .update({ status: "pending" as const } as Record<string, unknown>)
+          .eq("id", eventData.orderId);
+        log.warn("Order reverted to pending after PDF failure", { orderId: eventData.orderId });
+      }
     },
   },
   { event: "order/created" },
@@ -74,24 +83,26 @@ export const generateOrderPDF = inngest.createFunction(
       log.debug("Order status updated to processing", { orderId });
     });
 
-    // Step 3: Descargar imagen, generar PDF y subirlo
-    // Combinamos estos pasos para evitar serializar buffers entre steps
+    // Step 3: Descargar imagen original, generar PDF y subirlo
     const pdfPath = await step.run("generate-and-upload-pdf", async () => {
       const supabase = getSupabaseAdmin();
 
-      if (!order.processed_image_path) {
-        log.warn("No processed image for order, skipping PDF", { orderId });
-        throw new Error("No hay imagen procesada");
+      // Use original_images from the originals bucket
+      const imagePaths = order.original_images;
+      if (!imagePaths || imagePaths.length === 0) {
+        log.warn("No original images for order, skipping PDF", { orderId });
+        throw new Error("No hay imágenes originales");
       }
 
-      // Descargar imagen
-      log.debug("Downloading processed image", { orderId, path: order.processed_image_path });
+      // Download first image for PDF generation
+      const imagePath = imagePaths[0];
+      log.debug("Downloading original image", { orderId, path: imagePath });
       const { data: imageData, error: downloadError } = await supabase.storage
-        .from("processed")
-        .download(order.processed_image_path);
+        .from("originals")
+        .download(imagePath);
 
       if (downloadError) {
-        log.error("Error downloading image", downloadError, { orderId });
+        log.error("Error downloading image", downloadError, { orderId, imagePath });
         throw new Error(`Error descargando imagen: ${downloadError.message}`);
       }
 

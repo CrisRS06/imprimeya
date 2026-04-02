@@ -46,7 +46,7 @@ export default function DocumentoOpcionesPage() {
   const [doubleSided, setDoubleSided] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Load document metadata from localStorage
+  // Load document metadata from localStorage and verify it hasn't expired
   useEffect(() => {
     const stored = localStorage.getItem("uploadedDocument");
     const docId = localStorage.getItem("currentDocumentId");
@@ -54,14 +54,17 @@ export default function DocumentoOpcionesPage() {
       try {
         setDocument(JSON.parse(stored));
         setDocumentId(docId);
+        // Verify document still exists in IndexedDB (checks expiration)
+        getDocument(docId).catch(() => {
+          router.push("/documento");
+        });
       } catch {
-        // Redirect if no document
         router.push("/documento");
       }
     } else {
       router.push("/documento");
     }
-  }, [router]);
+  }, [router, getDocument]);
 
   const handleContinue = async () => {
     if (!document || !documentId) return;

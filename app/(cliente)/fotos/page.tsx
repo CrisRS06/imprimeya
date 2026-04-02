@@ -23,6 +23,7 @@ import { QualityPulse } from "@/components/feedback/QualityIndicator";
 import { ProcessingOverlay } from "@/components/feedback/LoadingStates";
 import { MAX_UPLOAD_SIZE, UPLOAD_TIMEOUT_MS, MAX_FILES_PER_SESSION, MAX_CONCURRENT_UPLOADS } from "@/lib/constants";
 import { usePhotoStorage, type PhotoWithQuantity } from "@/hooks/usePhotoStorage";
+import { createThumbnail } from "@/lib/utils/thumbnail";
 
 interface UploadedFile {
   id: string;
@@ -152,7 +153,7 @@ export default function FotosPage() {
     }
 
     // Paso 3: Validar resolución para impresión
-    const preview = URL.createObjectURL(processedFile);
+    const preview = await createThumbnail(processedFile, 256);
     const validation = await validateImageResolution(processedFile);
 
     // Paso 4: Subir a servidor con timeout

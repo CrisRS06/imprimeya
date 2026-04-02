@@ -115,6 +115,12 @@ export default function SeleccionarPaginasPage() {
         setSelectedPages(allPages);
         setRangeInput(pagesToRangeString(Array.from(allPages)));
       } catch (err) {
+        const message = err instanceof Error ? err.message : "";
+        // Redirect to upload if document expired or missing
+        if (message.includes("expir") || message.includes("No se encontr")) {
+          router.push("/documento");
+          return;
+        }
         // Handle specific error types with descriptive messages
         if (err instanceof EncryptedPdfError) {
           setError(err.message);

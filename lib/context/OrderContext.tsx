@@ -293,6 +293,15 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const resetOrder = useCallback(() => {
     dispatch({ type: "RESET_ORDER" });
     localStorage.removeItem(STORAGE_KEY);
+    // Clear photo and document storage keys on full reset
+    const keysToClean = [
+      "foto_uploadedPhotos", "foto_uploadSessionId", "foto_selectedLayoutId",
+      "foto_selectedPaper", "foto_sheetsCount", "foto_fillMode", "foto_photoQuantity",
+      "currentDocumentId", "uploadedDocument", "documentStoragePath",
+      "documentIsColor", "documentSelectedPaper", "documentSheetsCount", "documentDoubleSided",
+      "currentSessionId",
+    ];
+    keysToClean.forEach(key => localStorage.removeItem(key));
   }, []);
 
   const value: OrderContextType = {

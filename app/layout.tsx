@@ -3,6 +3,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Toaster } from "@/components/ui/sonner";
 import { OrderProvider } from "@/lib/context/OrderContext";
+import { IdleTimeoutGuard } from "@/components/IdleTimeoutGuard";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -78,10 +79,12 @@ export default function RootLayout({
       </head>
       <body className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased h-full bg-background`}>
         <OrderProvider>
-          <main className="h-full">
-            {children}
-          </main>
-          <Toaster position="top-center" richColors />
+          <IdleTimeoutGuard>
+            <main className="h-full">
+              {children}
+            </main>
+            <Toaster position="top-center" richColors />
+          </IdleTimeoutGuard>
         </OrderProvider>
       </body>
     </html>

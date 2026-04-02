@@ -248,9 +248,9 @@ function ResumenPageContent() {
         ? "Carta"
         : selectedLayout?.photo_size || "4x6";
 
-      // Call API con timeout (Vercel Hobby limit: 10s)
+      // Call API con timeout (Vercel Fluid Compute: 60s default)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       let response: Response;
       try {

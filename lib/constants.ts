@@ -9,8 +9,8 @@ export const MAX_UPLOAD_SIZE = 4 * 1024 * 1024; // 4MB
 // Dimensión máxima para imágenes (reduce memoria en móviles)
 export const MAX_IMAGE_DIMENSION = 2048;
 
-// Timeout para operaciones de red (API routes via Vercel Hobby: 10s limit)
-export const UPLOAD_TIMEOUT_MS = 9000; // 9s para dejar margen antes del límite de Vercel
+// Timeout para operaciones de red (Vercel Fluid Compute: 60s default)
+export const UPLOAD_TIMEOUT_MS = 30000; // 30s — suficiente para fotos de 4MB en conexiones lentas
 
 // Timeout para uploads directos a Supabase Storage (bypassa Vercel)
 export const STORAGE_UPLOAD_TIMEOUT_MS = 60000; // 60s para archivos grandes

@@ -58,15 +58,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           continue;
         }
 
-        const { data: urlData } = sb.storage
+        const { data: urlData, error: urlError } = await sb.storage
           .from("originals")
-          .getPublicUrl(imagePath);
+          .createSignedUrl(imagePath, 3600); // 1-hour expiry
 
-        if (urlData?.publicUrl) {
-          imageUrls.push(urlData.publicUrl);
+        if (urlData?.signedUrl) {
+          imageUrls.push(urlData.signedUrl);
         } else {
-          log.error("Failed to get public URL", undefined, { imagePath, requestId });
-          imageUrls.push(""); // Mantener indice para evitar desalineacion
+          log.error("Failed to create signed URL", urlError, { imagePath, requestId });
+          imageUrls.push("");
         }
       }
     }

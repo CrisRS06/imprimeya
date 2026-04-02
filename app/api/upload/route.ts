@@ -104,17 +104,17 @@ export async function POST(request: NextRequest) {
 
     log.info("File uploaded successfully", { path: data.path, size: file.size, requestId });
 
-    // Obtener URL publica
-    const { data: urlData } = supabase.storage
+    // Generate signed URL for preview (24h — matches photo session expiry)
+    const { data: urlData } = await supabase.storage
       .from("originals")
-      .getPublicUrl(data.path);
+      .createSignedUrl(data.path, 86400); // 24 hours
 
     return NextResponse.json({
       success: true,
       data: {
         id: fileId,
         path: data.path,
-        publicUrl: urlData.publicUrl,
+        publicUrl: urlData?.signedUrl || "",
         originalName: file.name,
         size: file.size,
         mimeType: file.type,

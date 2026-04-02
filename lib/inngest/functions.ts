@@ -43,7 +43,7 @@ export const generateOrderPDF = inngest.createFunction(
 
     // Step 1: Obtener datos del pedido
     const order = await step.run("fetch-order", async () => {
-      const supabase = await getSupabaseAdmin();
+      const supabase = getSupabaseAdmin();
       const { data, error } = await supabase
         .from("orders")
         .select(`
@@ -63,7 +63,7 @@ export const generateOrderPDF = inngest.createFunction(
 
     // Step 2: Actualizar estado a 'processing'
     await step.run("update-status-processing", async () => {
-      const supabase = await getSupabaseAdmin();
+      const supabase = getSupabaseAdmin();
       await supabase
         .from("orders")
         .update({
@@ -77,7 +77,7 @@ export const generateOrderPDF = inngest.createFunction(
     // Step 3: Descargar imagen, generar PDF y subirlo
     // Combinamos estos pasos para evitar serializar buffers entre steps
     const pdfPath = await step.run("generate-and-upload-pdf", async () => {
-      const supabase = await getSupabaseAdmin();
+      const supabase = getSupabaseAdmin();
 
       if (!order.processed_image_path) {
         log.warn("No processed image for order, skipping PDF", { orderId });
@@ -122,7 +122,7 @@ export const generateOrderPDF = inngest.createFunction(
 
     // Step 4: Actualizar pedido con path del PDF y estado 'ready'
     await step.run("update-order-ready", async () => {
-      const supabase = await getSupabaseAdmin();
+      const supabase = getSupabaseAdmin();
       await supabase
         .from("orders")
         .update({
@@ -167,36 +167,52 @@ export const cleanupOldFiles = inngest.createFunction(
     const olderThanDays = 7;
     log.info("Starting cleanup job", { olderThanDays });
 
-    // Limpiar imagenes originales
+    // Limpiar imagenes originales de pedidos entregados (7+ días)
     const originalsResult = await step.run("cleanup-originals", async () => {
-      const supabase = await getSupabaseAdmin();
+      const supabase = getSupabaseAdmin();
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
-      // Obtener pedidos antiguos entregados
-      const { data: orders } = await supabase
+      // Pedidos entregados hace más de 7 días
+      const { data: deliveredOrders } = await supabase
         .from("orders")
         .select("original_images")
         .eq("status", "delivered")
         .lt("delivered_at", cutoffDate.toISOString());
 
-      if (!orders) return { deleted: 0 };
+      // Pedidos cancelados hace más de 7 días
+      const { data: cancelledOrders } = await supabase
+        .from("orders")
+        .select("original_images")
+        .eq("status", "cancelled")
+        .lt("updated_at", cutoffDate.toISOString());
+
+      // Pedidos abandonados: pending/processing hace más de 3 días (never completed)
+      const abandonedCutoff = new Date();
+      abandonedCutoff.setDate(abandonedCutoff.getDate() - 3);
+      const { data: abandonedOrders } = await supabase
+        .from("orders")
+        .select("original_images")
+        .in("status", ["pending", "processing"])
+        .lt("created_at", abandonedCutoff.toISOString());
+
+      const allOrders = [...(deliveredOrders || []), ...(cancelledOrders || []), ...(abandonedOrders || [])];
 
       let deletedCount = 0;
-      for (const order of orders) {
+      for (const order of allOrders) {
         if (order.original_images?.length) {
           await supabase.storage.from("originals").remove(order.original_images);
           deletedCount += order.original_images.length;
         }
       }
 
-      log.info("Cleaned up original images", { deleted: deletedCount });
+      log.info("Cleaned up original images", { deleted: deletedCount, delivered: deliveredOrders?.length || 0, cancelled: cancelledOrders?.length || 0, abandoned: abandonedOrders?.length || 0 });
       return { deleted: deletedCount };
     });
 
     // Limpiar imagenes procesadas
     const processedResult = await step.run("cleanup-processed", async () => {
-      const supabase = await getSupabaseAdmin();
+      const supabase = getSupabaseAdmin();
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
@@ -223,7 +239,7 @@ export const cleanupOldFiles = inngest.createFunction(
 
     // Limpiar PDFs
     const pdfsResult = await step.run("cleanup-pdfs", async () => {
-      const supabase = await getSupabaseAdmin();
+      const supabase = getSupabaseAdmin();
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
@@ -248,10 +264,52 @@ export const cleanupOldFiles = inngest.createFunction(
       return { deleted: paths.length };
     });
 
+    // Limpiar archivos huérfanos en storage (subidos pero sin orden)
+    const orphansResult = await step.run("cleanup-orphan-sessions", async () => {
+      const supabase = getSupabaseAdmin();
+
+      // List all session folders in originals bucket
+      const { data: folders } = await supabase.storage.from("originals").list("", { limit: 100 });
+      if (!folders) return { deleted: 0 };
+
+      // Get all session IDs that have orders
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("client_session_id");
+      const activeSessionIds = new Set((orders || []).map(o => o.client_session_id).filter(Boolean));
+
+      let deletedCount = 0;
+      const cutoffMs = 24 * 60 * 60 * 1000; // 24 hours
+      const now = Date.now();
+
+      for (const folder of folders) {
+        if (!folder.name || folder.name === ".emptyFolderPlaceholder") continue;
+
+        // Skip if this session has an order
+        if (activeSessionIds.has(folder.name)) continue;
+
+        // Check folder age (created_at from metadata)
+        const folderAge = folder.created_at ? now - new Date(folder.created_at).getTime() : Infinity;
+        if (folderAge < cutoffMs) continue; // Skip recent uploads (< 24h)
+
+        // Delete all files in orphan session folder
+        const { data: files } = await supabase.storage.from("originals").list(folder.name);
+        if (files?.length) {
+          const paths = files.map(f => `${folder.name}/${f.name}`);
+          await supabase.storage.from("originals").remove(paths);
+          deletedCount += paths.length;
+        }
+      }
+
+      log.info("Cleaned up orphan sessions", { deleted: deletedCount });
+      return { deleted: deletedCount };
+    });
+
     log.info("Cleanup job completed", {
       originalsDeleted: originalsResult.deleted,
       processedDeleted: processedResult.deleted,
       pdfsDeleted: pdfsResult.deleted,
+      orphansDeleted: orphansResult.deleted,
     });
 
     return { success: true };
